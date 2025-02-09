@@ -1,1 +1,1 @@
-sources = files('rdm.cpp')
+sources = files('rdm.cpp', 'modules.cpp')

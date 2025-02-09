@@ -1,0 +1,59 @@
+#pragma once
+
+#include <unordered_map>
+#include <filesystem>
+#include <lua.hpp>
+#include <vector>
+
+namespace fs = std::filesystem;
+
+using FileContentMap = std::unordered_map<std::string, std::string>;
+using FileList = std::vector<fs::path>;
+
+
+namespace rdm {
+    class Module;
+    using ModuleList = std::vector<Module>;
+
+    int lapi_Read(lua_State* L);
+    int lapi_OptionIsSet(lua_State* L);
+    
+    class Module {
+        public:
+        Module(fs::path path);
+        Module(Module&& other);
+        Module(Module& other) = delete;
+        Module& operator=(const Module&) = delete;
+        FileContentMap getGeneratedFiles() const;
+        std::string getPath() const;
+        std::string getName() const;
+        ~Module();
+
+        private:
+        void setupLuaState();
+
+        static std::string getNameFromPath(std::filesystem::path path);
+
+        const fs::path m_path;
+        const std::string m_name;
+        lua_State* m_state;
+
+        static const char* LUA_FILE_DIR;
+    };
+
+    class ModuleManager {
+        public:
+        ModuleManager(fs::path root);
+        void refreshModules();
+        const ModuleList& getModules();
+        FileContentMap getGeneratedFiles();
+
+        static bool isAllowedPath(fs::path base, fs::path userPath);
+        static ModuleList getModules(fs::path root);
+
+        static const std::string MODULE_PREFIX;
+        private:
+        const fs::path m_root;
+        ModuleList m_modules;
+    };
+}
