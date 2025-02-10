@@ -61,21 +61,25 @@ int main(int argc, char* argv[]) {
         auto modulesAndFlags = parseModulesAndFlags(argv + 2, argc - 2);
 
         if (modulesAndFlags.modules.empty()) {
-            LOG_INFO("No modules specified, defaulting to all modules");
+            LOG_WARN("No modules specified, defaulting to all modules");
         } else {
-            LOG_INFO("Parsed modules:");
+            #ifdef _DEBUG
+            LOG_DEBUG("Parsed modules:");
             for (auto& module : modulesAndFlags.modules) {
                 LOG(module);
             }
+            #endif
         }
 
         if (modulesAndFlags.flags.empty()) {
-            LOG_INFO("No flags specified");
+            LOG_WARN("No flags specified");
         } else {
-            LOG_INFO("Parsed flags:");
+            #ifdef _DEBUG
+            LOG_DEBUG("Parsed flags:");
             for (auto& flag : modulesAndFlags.flags) {
                 LOG(flag);
             }
+            #endif
         }
 
 
@@ -91,19 +95,21 @@ int main(int argc, char* argv[]) {
             if (modulesAndFlags.modules.empty() || modulesAndFlags.modules.contains(module.getName())) {
                 FileContentMap generatedFiles = module.getGeneratedFiles();
 
+                LOG_SEP();
                 if (generatedFiles.empty()) {
-                    LOG("The module '" << module.getName() << "' was found but returned no files");
+                    LOG_WARN("The module '" << module.getName() << "' was found but returned no files");
                     continue;
                 }
 
-                LOG_SEP();
+                LOG_INFO("Module: " << moduleName);
                 for (auto& fileKV : generatedFiles) {
+                    LOG_SEP();
                     LOG(fileKV.first << ":");
                     LOG(fileKV.second);
-                    LOG_SEP();
                 }
             }
         }
+        LOG_SEP();
     } else if (cmd == "apply") {
         LOG_WARN("Unimplemented");
         menus::printApplyHelp();
