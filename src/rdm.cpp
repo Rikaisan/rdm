@@ -1,10 +1,49 @@
-#include "Logger.hpp"
+#include <unordered_set>
+#include <string>
+
 #include "modules.hpp"
+#include "Logger.hpp"
 #include "menus.hpp"
+
 
 using namespace rdm;
 
-int main(int argc, char **argv) {
+struct ModulesAndFlags {
+    std::unordered_set<std::string> modules;
+    std::unordered_set<std::string> flags;
+};
+
+ModulesAndFlags parseModulesAndFlags(char* argv[], int count) {
+    ModulesAndFlags maf;
+    if (count == 0) return maf;
+
+    std::vector<std::string> args;
+    args.reserve(count);
+    for (int i = 0; i < count; ++i) {
+        args.emplace_back(argv[i]);
+    }
+
+    int currentArg = 0;
+
+    while (currentArg < count) {
+        auto& arg = args.at(currentArg++);
+        if (arg.starts_with("-")) {
+            if (arg == "-f" || arg == "--flags") break;
+            continue;
+        }
+        maf.modules.insert(arg);
+    }
+
+    while (currentArg < count) {
+        auto& arg = args.at(currentArg++);
+        if (arg.starts_with("-")) continue;
+        maf.flags.insert(arg);
+    }
+
+    return maf;
+}
+
+int main(int argc, char* argv[]) {
     if (argc == 1) {
         menus::printMainHelp();
         return EXIT_SUCCESS;
@@ -19,16 +58,42 @@ int main(int argc, char **argv) {
             return EXIT_FAILURE;
         }
 
-        ModuleManager moduleManager = ModuleManager("home");
-        std::string moduleName = argv[2];
+        auto modulesAndFlags = parseModulesAndFlags(argv + 2, argc - 2);
 
-        for (auto& module: moduleManager.getModules()) {
-            if (module.getName() == moduleName) {
+        if (modulesAndFlags.modules.empty()) {
+            LOG_INFO("No modules specified, defaulting to all modules");
+        } else {
+            LOG_INFO("Parsed modules:");
+            for (auto& module : modulesAndFlags.modules) {
+                LOG(module);
+            }
+        }
+
+        if (modulesAndFlags.flags.empty()) {
+            LOG_INFO("No flags specified");
+        } else {
+            LOG_INFO("Parsed flags:");
+            for (auto& flag : modulesAndFlags.flags) {
+                LOG(flag);
+            }
+        }
+
+
+        ModuleManager moduleManager = ModuleManager("home", modulesAndFlags.flags);
+
+        for (auto& moduleName : modulesAndFlags.modules) {
+            if (!moduleManager.getModules().contains(moduleName)) {
+                LOG_ERR("Couldn't find the module '" << moduleName << "', skipping...");
+            }
+        }
+
+        for (auto& [moduleName, module]: moduleManager.getModules()) {
+            if (modulesAndFlags.modules.empty() || modulesAndFlags.modules.contains(module.getName())) {
                 FileContentMap generatedFiles = module.getGeneratedFiles();
 
                 if (generatedFiles.empty()) {
-                    LOG("The module '" << moduleName << "' was found but returned no files");
-                    return EXIT_SUCCESS;
+                    LOG("The module '" << module.getName() << "' was found but returned no files");
+                    continue;
                 }
 
                 LOG_SEP();
@@ -37,12 +102,8 @@ int main(int argc, char **argv) {
                     LOG(fileKV.second);
                     LOG_SEP();
                 }
-
-                return EXIT_SUCCESS;
             }
         }
-
-        LOG_ERR("Couldn't find module '" << moduleName << "'");
     } else if (cmd == "apply") {
         LOG_WARN("Unimplemented");
         menus::printApplyHelp();
