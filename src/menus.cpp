@@ -9,8 +9,8 @@ namespace rdm::menus {
     }
     
     void printApplyHelp() {
-        LOG("Usage: rdm apply <modules...> [options...]");
-        LOG(" module            The name of the module to apply (e.g. rdm-hyprland.lua -> hyprland), use * for all modules");
+        LOG("Usage: rdm apply [modules...] [options...]");
+        LOG(" module            The name of the module to apply (e.g. rdm-hyprland.lua -> hyprland), leave empty for all modules");
         LOG("Options:");
         LOG(" -f,--flags        A space separated list of flags that should be passed to the modules");
     }
@@ -23,6 +23,6 @@ namespace rdm::menus {
 
     void printPreviewHelp() {
         LOG("Usage: rdm preview <module>");
-        LOG(" module            The name of the module to apply (e.g. rdm-hyprland.lua -> hyprland), use * for all modules");
+        LOG(" module            The name of the module to apply (e.g. rdm-hyprland.lua -> hyprland), leave empty for all modules");
     }
 }
