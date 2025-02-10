@@ -8,6 +8,7 @@ namespace rdm {
 
     const std::string ModuleManager::MODULE_PREFIX = "rdm-";
     const char* Module::LUA_FILE_DIR = "RDM_FILE_ROOT";
+    std::unordered_set<std::string> ModuleManager::m_flags;
 
     int lapi_Read(lua_State* L) {
         if (lua_gettop(L) != 1) {
@@ -50,12 +51,8 @@ namespace rdm {
         if (argc != 1) {
             lua_pushboolean(L, 0);
         } else {
-            std::string option = lua_tostring(L, -1);
-            if (option == "hypr") {
-                lua_pushboolean(L, 1);
-            } else {
-                lua_pushboolean(L, 0);
-            }
+            std::string flag = lua_tostring(L, -1);
+            lua_pushboolean(L, ModuleManager::isFlagSet(flag));
         }
         return 1;
     }
@@ -119,6 +116,15 @@ namespace rdm {
         this->refreshModules();
     }
 
+    ModuleManager::ModuleManager(fs::path root, std::unordered_set<std::string>& flags): m_root(root) {
+        ModuleManager::m_flags = std::unordered_set<std::string>();
+        m_flags.reserve(m_flags.size());
+        for (auto& flag : flags) {
+            m_flags.insert(flag);
+        }
+        this->refreshModules();
+    }
+
     void ModuleManager::refreshModules() {
         m_modules = ModuleManager::getModules(m_root);
     }
@@ -130,8 +136,8 @@ namespace rdm {
     FileContentMap ModuleManager::getGeneratedFiles() {
         FileContentMap files;
 
-        for (Module& module : m_modules) {
-            for (auto& fileKV : module.getGeneratedFiles()) {
+        for (auto& pair : m_modules) {
+            for (auto& fileKV : pair.second.getGeneratedFiles()) {
                 files.emplace(fileKV.first, fileKV.second); // FIXME: What if the same file is specified twice?
             }
         }
@@ -174,17 +180,22 @@ namespace rdm {
             if (file.is_directory()) {
                 ModuleList nestedModules = ModuleManager::getModules(filePath);
                 for (auto& module : nestedModules) {
-                    modules.push_back(std::move(module));
+                    modules.insert(std::move(module));
                 }
             } else {
                 std::string fileName = filePath.filename();
                 if (fileName.starts_with(MODULE_PREFIX) && fileName.ends_with(".lua")) {
-                    modules.emplace_back(filePath);
+                    Module module = Module(filePath);
+                    modules.emplace(module.getName(), std::move(module));
                 }
             }
         }
 
 
         return modules;
+    }
+
+    bool ModuleManager::isFlagSet(std::string flag) {
+        return m_flags.contains(flag);
     }
 }

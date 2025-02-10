@@ -1,5 +1,6 @@
 #pragma once
 
+#include <unordered_set>
 #include <unordered_map>
 #include <filesystem>
 #include <lua.hpp>
@@ -13,7 +14,7 @@ using FileList = std::vector<fs::path>;
 
 namespace rdm {
     class Module;
-    using ModuleList = std::vector<Module>;
+    using ModuleList = std::unordered_map<std::string, Module>;
 
     int lapi_Read(lua_State* L);
     int lapi_OptionIsSet(lua_State* L);
@@ -44,16 +45,19 @@ namespace rdm {
     class ModuleManager {
         public:
         ModuleManager(fs::path root);
+        ModuleManager(fs::path root, std::unordered_set<std::string>& flags);
         void refreshModules();
         const ModuleList& getModules();
         FileContentMap getGeneratedFiles();
 
         static bool isAllowedPath(fs::path base, fs::path userPath);
         static ModuleList getModules(fs::path root);
+        static bool isFlagSet(std::string flag);
 
         static const std::string MODULE_PREFIX;
         private:
         const fs::path m_root;
         ModuleList m_modules;
+        static std::unordered_set<std::string> m_flags;
     };
 }
