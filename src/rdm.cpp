@@ -1,18 +1,12 @@
 #include "Logger.hpp"
 #include "modules.hpp"
+#include "menus.hpp"
 
 using namespace rdm;
 
-void printHelpMenu() {
-    LOG("Usage: rdm <command> [args...]");
-    LOG(" apply         Runs the scripts");
-    LOG(" init          Initializes rdm with a git repository");
-    LOG(" preview       Preview a specific module output");
-}
-
 int main(int argc, char **argv) {
     if (argc == 1) {
-        printHelpMenu();
+        menus::printMainHelp();
         return EXIT_SUCCESS;
     }
 
@@ -21,8 +15,7 @@ int main(int argc, char **argv) {
     if (cmd == "preview") {
         if (argc < 3) {
             LOG_ERR("Not enough arguments supplied");
-            LOG("Usage: rdm preview <module_name>");
-            LOG(" <module_name>      rdm script with no prefix or extension (e.g. rdm-hyprland.lua -> hyprland)");
+            menus::printPreviewHelp();
             return EXIT_FAILURE;
         }
 
@@ -52,13 +45,15 @@ int main(int argc, char **argv) {
         LOG_ERR("Couldn't find module '" << moduleName << "'");
     } else if (cmd == "apply") {
         LOG_WARN("Unimplemented");
+        menus::printApplyHelp();
         return EXIT_FAILURE;
     } else if (cmd == "init") {
         LOG_WARN("Unimplemented");
+        menus::printInitHelp();
         return EXIT_FAILURE;
     } else {
         LOG("Unrecognized command '" << cmd << "'");
-        printHelpMenu();
+        menus::printMainHelp();
     }
     
     return EXIT_SUCCESS;
