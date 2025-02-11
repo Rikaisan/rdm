@@ -97,8 +97,13 @@ int main(int argc, char* argv[]) {
 
                 LOG_SEP();
                 if (generatedFiles.empty()) {
-                    LOG_WARN("The module '" << module.getName() << "' was found but returned no files");
-                    continue;
+                    if (module.getExitCode() == LUA_OK) {
+                        LOG_WARN("The module '" << module.getName() << "' was found but returned no files, exit code: " << module.getExitCode());
+                        continue;
+                    } else {
+                        LOG_ERR("The module '" << module.getName() << "' was found but had errors: " << module.getErrorString());
+                        continue;
+                    }
                 }
 
                 LOG_INFO("Module: " << moduleName);

@@ -66,11 +66,21 @@ namespace rdm {
     Module::Module(Module&& other)
     : m_path(std::move(other.m_path))
     , m_name(std::move(other.m_name))
-    , m_state(other.m_state) {
+    , m_state(other.m_state)
+    , m_luaExitCode(other.m_luaExitCode)
+    , m_luaErrorString(std::move(other.m_luaErrorString)) {
         other.m_state = nullptr;
     }
     
     Module::~Module() { if (m_state != nullptr) lua_close(m_state); }
+
+    int Module::getExitCode() const {
+        return m_luaExitCode;
+    }
+
+    std::string Module::getErrorString() const {
+        return m_luaErrorString;
+    }
 
     FileContentMap Module::getGeneratedFiles() const {
         FileContentMap files;
@@ -95,7 +105,7 @@ namespace rdm {
 
     std::string Module::getName() const { return m_name; }
 
-    void Module::setupLuaState() {
+    int Module::setupLuaState() {
         currentlyExecutingFile = m_path;
         m_state = luaL_newstate();
         lua_pushstring(m_state, m_path.parent_path().c_str());
@@ -103,7 +113,11 @@ namespace rdm {
         lua_register(m_state, "Read", lapi_Read);
         lua_register(m_state, "OptionIsSet", lapi_OptionIsSet);
         luaL_openlibs(m_state); // FIXME: Change to only load safe libs (?) maybe allow an --allow-unsafe flag?
-        luaL_dofile(m_state, m_path.c_str());
+        m_luaExitCode = luaL_dofile(m_state, m_path.c_str());
+        if (m_luaExitCode != LUA_OK) {
+            m_luaErrorString = lua_tostring(m_state, -1);
+        }
+        return m_luaExitCode;
     }
 
     std::string Module::getNameFromPath(std::filesystem::path path) {

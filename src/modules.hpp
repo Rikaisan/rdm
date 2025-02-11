@@ -27,17 +27,22 @@ namespace rdm {
         Module& operator=(const Module&) = delete;
         FileContentMap getGeneratedFiles() const;
         std::string getPath() const;
+        int getExitCode() const;
+        std::string getErrorString() const;
         std::string getName() const;
         ~Module();
 
         private:
-        void setupLuaState();
+        int setupLuaState();
 
         static std::string getNameFromPath(std::filesystem::path path);
 
         const fs::path m_path;
         const std::string m_name;
+
         lua_State* m_state;
+        int m_luaExitCode;
+        std::string m_luaErrorString;
 
         static const char* LUA_FILE_DIR;
     };
