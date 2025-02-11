@@ -100,11 +100,9 @@ namespace rdm {
         m_state = luaL_newstate();
         lua_pushstring(m_state, m_path.parent_path().c_str());
         lua_setglobal(m_state, LUA_FILE_DIR);
-        lua_pushcfunction(m_state, lapi_Read);
-        lua_setglobal(m_state, "Read");
-        lua_pushcfunction(m_state, lapi_OptionIsSet);
-        lua_setglobal(m_state, "OptionIsSet");
-        luaL_openlibs(m_state);
+        lua_register(m_state, "Read", lapi_Read);
+        lua_register(m_state, "OptionIsSet", lapi_OptionIsSet);
+        luaL_openlibs(m_state); // FIXME: Change to only load safe libs (?) maybe allow an --allow-unsafe flag?
         luaL_dofile(m_state, m_path.c_str());
     }
 
