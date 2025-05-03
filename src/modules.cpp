@@ -46,6 +46,7 @@ namespace rdm {
         return 1;
     }
 
+    // TODO: Make a ModuleIsSet function (maybe append to a static variable after each module manager creation?)
     int lapi_OptionIsSet(lua_State* L) {
         int argc = lua_gettop(L);
         if (argc != 1) {

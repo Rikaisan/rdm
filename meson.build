@@ -3,7 +3,7 @@ project('rdm', 'cpp',
   default_options : ['warning_level=3',
                      'cpp_std=c++20'])
 
-add_global_arguments('-D_DEBUG', language: 'cpp')
+# add_global_arguments('-D_DEBUG', language: 'cpp')
 # add_global_arguments('-D_NLOG', language: 'cpp')
 
 lua_dep = dependency('lua-5.4')
