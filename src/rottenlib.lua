@@ -9,3 +9,13 @@ function Read(filename) end
 --- @param option string
 --- @return boolean
 function OptionIsSet(option) end
+
+--- Get a boolean representing if a specific flag was specified by the user
+--- @param flag string
+--- @return boolean
+function FlagIsSet(flag) end
+
+--- Get a boolean representing if a specific module was specified by the user
+--- @param module string
+--- @return boolean
+function ModuleIsSet(module) end

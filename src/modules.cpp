@@ -8,7 +8,8 @@ namespace rdm {
 
     const std::string ModuleManager::MODULE_PREFIX = "rdm-";
     const char* Module::LUA_FILE_DIR = "RDM_FILE_ROOT";
-    std::unordered_set<std::string> ModuleManager::m_flags;
+    std::unordered_set<std::string> ModuleManager::m_userModules;
+    std::unordered_set<std::string> ModuleManager::m_userFlags;
 
     int lapi_Read(lua_State* L) {
         if (lua_gettop(L) != 1) {
@@ -46,10 +47,20 @@ namespace rdm {
         return 1;
     }
 
-    // TODO: Make a ModuleIsSet function (maybe append to a static variable after each module manager creation?)
-    int lapi_OptionIsSet(lua_State* L) {
+    int lapi_ModuleIsSet(lua_State* L) {
         int argc = lua_gettop(L);
-        if (argc != 1) {
+        if (argc != 1 || !lua_isstring(L, -1)) {
+            lua_pushboolean(L, 0);
+        } else {
+            std::string module = lua_tostring(L, -1);
+            lua_pushboolean(L, ModuleManager::isModuleSet(module));
+        }
+        return 1;
+    }
+
+    int lapi_FlagIsSet(lua_State* L) {
+        int argc = lua_gettop(L);
+        if (argc != 1 || !lua_isstring(L, -1)) {
             lua_pushboolean(L, 0);
         } else {
             std::string flag = lua_tostring(L, -1);
@@ -112,7 +123,9 @@ namespace rdm {
         lua_pushstring(m_state, m_path.parent_path().c_str());
         lua_setglobal(m_state, LUA_FILE_DIR);
         lua_register(m_state, "Read", lapi_Read);
-        lua_register(m_state, "OptionIsSet", lapi_OptionIsSet);
+        lua_register(m_state, "FlagIsSet", lapi_FlagIsSet);
+        lua_register(m_state, "OptionIsSet", lapi_FlagIsSet);
+        lua_register(m_state, "ModuleIsSet", lapi_ModuleIsSet);
         luaL_openlibs(m_state); // FIXME: Change to only load safe libs (?) maybe allow an --allow-unsafe flag?
         m_luaExitCode = luaL_dofile(m_state, m_path.c_str());
         if (m_luaExitCode != LUA_OK) {
@@ -129,11 +142,18 @@ namespace rdm {
         this->refreshModules();
     }
 
-    ModuleManager::ModuleManager(fs::path root, std::unordered_set<std::string>& flags): m_root(root) {
-        ModuleManager::m_flags = std::unordered_set<std::string>();
-        m_flags.reserve(m_flags.size());
-        for (auto& flag : flags) {
-            m_flags.insert(flag);
+    ModuleManager::ModuleManager(fs::path root, ModulesAndFlags& maf): m_root(root) {
+        ModuleManager::m_userModules = std::unordered_set<std::string>();
+        ModuleManager::m_userFlags = std::unordered_set<std::string>();
+
+        m_userFlags.reserve(m_userFlags.size());
+        for (auto& flag : maf.flags) {
+            m_userFlags.insert(flag);
+        }
+
+        m_userModules.reserve(m_userModules.size());
+        for (auto& module : maf.modules) {
+            m_userModules.insert(module);
         }
         this->refreshModules();
     }
@@ -209,6 +229,10 @@ namespace rdm {
     }
 
     bool ModuleManager::isFlagSet(std::string flag) {
-        return m_flags.contains(flag);
+        return m_userFlags.contains(flag);
+    }
+
+    bool ModuleManager::isModuleSet(std::string module) {
+        return m_userModules.contains(module);
     }
 }

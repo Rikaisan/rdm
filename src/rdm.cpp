@@ -8,11 +8,6 @@
 
 using namespace rdm;
 
-struct ModulesAndFlags {
-    std::unordered_set<std::string> modules;
-    std::unordered_set<std::string> flags;
-};
-
 ModulesAndFlags parseModulesAndFlags(char* argv[], int count) {
     ModulesAndFlags maf;
     if (count == 0) return maf;
@@ -83,7 +78,7 @@ int main(int argc, char* argv[]) {
         }
 
 
-        ModuleManager moduleManager = ModuleManager("home", modulesAndFlags.flags);
+        ModuleManager moduleManager = ModuleManager("home", modulesAndFlags);
 
         for (auto& moduleName : modulesAndFlags.modules) {
             if (!moduleManager.getModules().contains(moduleName)) {

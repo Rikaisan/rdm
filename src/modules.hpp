@@ -13,6 +13,11 @@ using FileList = std::vector<fs::path>;
 
 
 namespace rdm {
+    struct ModulesAndFlags {
+        std::unordered_set<std::string> modules;
+        std::unordered_set<std::string> flags;
+    };
+
     class Module;
     using ModuleList = std::unordered_map<std::string, Module>;
 
@@ -50,7 +55,7 @@ namespace rdm {
     class ModuleManager {
         public:
         ModuleManager(fs::path root);
-        ModuleManager(fs::path root, std::unordered_set<std::string>& flags);
+        ModuleManager(fs::path root, ModulesAndFlags& maf);
         void refreshModules();
         const ModuleList& getModules();
         FileContentMap getGeneratedFiles();
@@ -58,11 +63,13 @@ namespace rdm {
         static bool isAllowedPath(fs::path base, fs::path userPath);
         static ModuleList getModules(fs::path root);
         static bool isFlagSet(std::string flag);
+        static bool isModuleSet(std::string module);
 
         static const std::string MODULE_PREFIX;
         private:
         const fs::path m_root;
         ModuleList m_modules;
-        static std::unordered_set<std::string> m_flags;
+        static std::unordered_set<std::string> m_userModules;
+        static std::unordered_set<std::string> m_userFlags;
     };
 }
