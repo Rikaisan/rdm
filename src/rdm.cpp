@@ -4,9 +4,12 @@
 #include "modules.hpp"
 #include "Logger.hpp"
 #include "menus.hpp"
-
+#include "utils.hpp"
+#include <filesystem>
 
 using namespace rdm;
+
+const std::filesystem::path RDM_DATA_DIR = getDataDir();
 
 ModulesAndFlags parseModulesAndFlags(char* argv[], int count) {
     ModulesAndFlags maf;
