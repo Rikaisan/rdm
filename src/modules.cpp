@@ -108,7 +108,7 @@ namespace rdm {
                 if (lua_isstring(m_state, -1)) {
                     std::string value = lua_tostring(m_state, -1);
                     if (isAllowedPath(m_destinationRoot, m_destinationRoot / key, false))
-                        files.emplace(key, value); // FIXME: What if the same file is specified twice? (relative paths)
+                        files.emplace(m_destinationRoot / key, value); // FIXME: What if the same file is specified twice? (relative paths)
                 }
             }
             lua_pop(m_state, 1);
