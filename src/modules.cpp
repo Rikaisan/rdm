@@ -235,4 +235,12 @@ namespace rdm {
     bool ModuleManager::isModuleSet(std::string module) {
         return m_userModules.contains(module);
     }
+
+    bool ModuleManager::shouldProcessAllModules() {
+        return m_userModules.empty();
+    }
+
+    bool ModuleManager::shouldProcessModule(std::string module) {
+        return m_userModules.contains(module);
+    }
 }

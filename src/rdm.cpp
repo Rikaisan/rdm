@@ -90,7 +90,7 @@ int main(int argc, char* argv[]) {
         }
 
         for (auto& [moduleName, module]: moduleManager.getModules()) {
-            if (modulesAndFlags.modules.empty() || modulesAndFlags.modules.contains(module.getName())) {
+            if (moduleManager.shouldProcessAllModules() || moduleManager.shouldProcessModule(module.getName())) {
                 FileContentMap generatedFiles = module.getGeneratedFiles();
 
                 LOG_SEP();

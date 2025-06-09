@@ -60,6 +60,8 @@ namespace rdm {
         const ModuleList& getModules();
         FileContentMap getGeneratedFiles();
 
+        static bool shouldProcessAllModules();
+        static bool shouldProcessModule(std::string module);
         static bool isAllowedPath(fs::path base, fs::path userPath);
         static ModuleList getModules(fs::path root);
         static bool isFlagSet(std::string flag);
