@@ -42,6 +42,8 @@ ModulesAndFlags parseModulesAndFlags(char* argv[], int count) {
 }
 
 int main(int argc, char* argv[]) {
+    ensureDataDirExists();
+
     if (argc == 1) {
         menus::printMainHelp();
         return EXIT_SUCCESS;
@@ -81,7 +83,7 @@ int main(int argc, char* argv[]) {
         }
 
 
-        ModuleManager moduleManager = ModuleManager("home", modulesAndFlags);
+        ModuleManager moduleManager = ModuleManager(RDM_DATA_DIR / "home", getUserHome(), modulesAndFlags);
 
         for (auto& moduleName : modulesAndFlags.modules) {
             if (!moduleManager.getModules().contains(moduleName)) {

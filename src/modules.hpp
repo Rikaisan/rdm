@@ -26,7 +26,7 @@ namespace rdm {
     
     class Module {
         public:
-        Module(fs::path path);
+        Module(fs::path path, fs::path destinationRoot);
         Module(Module&& other);
         Module(Module& other) = delete;
         Module& operator=(const Module&) = delete;
@@ -43,6 +43,7 @@ namespace rdm {
         static std::string getNameFromPath(std::filesystem::path path);
 
         const fs::path m_path;
+        const fs::path m_destinationRoot;
         const std::string m_name;
 
         lua_State* m_state;
@@ -54,22 +55,22 @@ namespace rdm {
 
     class ModuleManager {
         public:
-        ModuleManager(fs::path root);
-        ModuleManager(fs::path root, ModulesAndFlags& maf);
+        ModuleManager(fs::path root, fs::path destinationRoot);
+        ModuleManager(fs::path root, fs::path destinationRoot, ModulesAndFlags& maf);
         void refreshModules();
         const ModuleList& getModules();
         FileContentMap getGeneratedFiles();
 
         static bool shouldProcessAllModules();
         static bool shouldProcessModule(std::string module);
-        static bool isAllowedPath(fs::path base, fs::path userPath);
-        static ModuleList getModules(fs::path root);
+        static ModuleList getModules(fs::path root, fs::path destinationRoot);
         static bool isFlagSet(std::string flag);
         static bool isModuleSet(std::string module);
 
         static const std::string MODULE_PREFIX;
         private:
         const fs::path m_root;
+        const fs::path m_destinationRoot;
         ModuleList m_modules;
         static std::unordered_set<std::string> m_userModules;
         static std::unordered_set<std::string> m_userFlags;

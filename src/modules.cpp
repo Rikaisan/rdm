@@ -1,5 +1,6 @@
 #include "modules.hpp"
 #include "Logger.hpp"
+#include "utils.hpp"
 #include <fstream>
 #include <string>
 
@@ -25,7 +26,7 @@ namespace rdm {
             fs::path fileToRead(currentlyExecutingFile.parent_path());
             fileToRead.append(fileName);
 
-            if (!ModuleManager::isAllowedPath(currentlyExecutingFile.parent_path(), fileToRead)) {
+            if (!isAllowedPath(currentlyExecutingFile.parent_path(), fileToRead, true)) {
                 lua_pushstring(L, "");
                 return 1;
             }
@@ -69,14 +70,16 @@ namespace rdm {
         return 1;
     }
 
-    Module::Module(fs::path modulePath)
+    Module::Module(fs::path modulePath, fs::path destinationRoot)
     : m_path(modulePath)
+    , m_destinationRoot(destinationRoot)
     , m_name(Module::getNameFromPath(modulePath)) {
         this->setupLuaState();
     }
 
     Module::Module(Module&& other)
     : m_path(std::move(other.m_path))
+    , m_destinationRoot(std::move(other.m_destinationRoot))
     , m_name(std::move(other.m_name))
     , m_state(other.m_state)
     , m_luaExitCode(other.m_luaExitCode)
@@ -104,7 +107,8 @@ namespace rdm {
                 std::string key = lua_tostring(m_state, -2);
                 if (lua_isstring(m_state, -1)) {
                     std::string value = lua_tostring(m_state, -1);
-                    files.emplace(key, value); // FIXME: What if the same file is specified twice? (relative paths)
+                    if (isAllowedPath(m_destinationRoot, m_destinationRoot / key, false))
+                        files.emplace(key, value); // FIXME: What if the same file is specified twice? (relative paths)
                 }
             }
             lua_pop(m_state, 1);
@@ -138,11 +142,17 @@ namespace rdm {
         return path.stem().string().substr(ModuleManager::MODULE_PREFIX.length());
     }
 
-    ModuleManager::ModuleManager(fs::path root): m_root(root) {
+    ModuleManager::ModuleManager(fs::path root, fs::path destinationRoot)
+    : m_root(root)
+    , m_destinationRoot(destinationRoot)
+    {
         this->refreshModules();
     }
 
-    ModuleManager::ModuleManager(fs::path root, ModulesAndFlags& maf): m_root(root) {
+    ModuleManager::ModuleManager(fs::path root, fs::path destinationRoot, ModulesAndFlags& maf)
+    : m_root(root)
+    , m_destinationRoot(destinationRoot)
+    {
         ModuleManager::m_userModules = std::unordered_set<std::string>();
         ModuleManager::m_userFlags = std::unordered_set<std::string>();
 
@@ -159,7 +169,7 @@ namespace rdm {
     }
 
     void ModuleManager::refreshModules() {
-        m_modules = ModuleManager::getModules(m_root);
+        m_modules = ModuleManager::getModules(m_root, m_destinationRoot);
     }
 
     const ModuleList& ModuleManager::getModules() {
@@ -178,47 +188,21 @@ namespace rdm {
         return files;
     }
 
-    bool ModuleManager::isAllowedPath(fs::path base, fs::path userPath) {
-        LOG_DEBUG("Validating path: " << userPath);
-        fs::path absoluteBase = fs::absolute(base);
-        fs::path absoluteUser = fs::absolute(userPath);
-
-        LOG_DEBUG("Absolute base: " << absoluteBase);
-        LOG_DEBUG("Absolute user: " << absoluteUser);
-
-        if (fs::exists(absoluteBase)) {
-            absoluteBase = fs::canonical(absoluteBase);
-            LOG_DEBUG("Canonical base: " << absoluteBase);
-        }
-
-        if (fs::exists(absoluteUser)) {
-            absoluteUser = fs::canonical(absoluteUser);
-            LOG_DEBUG("Canonical user: " << absoluteUser);
-        } else {
-            absoluteUser = "";
-            LOG_DEBUG("Canonical user: INVALID");
-        }
-
-        bool isValid = absoluteUser.string().starts_with(absoluteBase.c_str());
-        if (isValid) { LOG_DEBUG("Pass!"); } else { LOG_DEBUG("Denied!"); }
-        return isValid;
-    }
-
-    ModuleList ModuleManager::getModules(fs::path root) {
+    ModuleList ModuleManager::getModules(fs::path root, fs::path destinationRoot) {
         ModuleList modules;
         modules.reserve(32);
 
         for (auto& file : fs::directory_iterator(root)) {
             auto filePath = file.path();
             if (file.is_directory()) {
-                ModuleList nestedModules = ModuleManager::getModules(filePath);
+                ModuleList nestedModules = ModuleManager::getModules(filePath, destinationRoot);
                 for (auto& module : nestedModules) {
                     modules.insert(std::move(module));
                 }
             } else {
                 std::string fileName = filePath.filename();
                 if (fileName.starts_with(MODULE_PREFIX) && fileName.ends_with(".lua")) {
-                    Module module = Module(filePath);
+                    Module module = Module(filePath, destinationRoot);
                     modules.emplace(module.getName(), std::move(module));
                 }
             }
