@@ -11,16 +11,24 @@ namespace fs = std::filesystem;
 
 
 namespace rdm {
-    struct FileData {
-        std::variant<std::string, fs::path> content, filePath;
-        bool isRawData;
+    enum class FileDataType {
+        RawData,
+        Text,
+        Directory
+    };
 
+    struct FileData {
         FileData(std::string content);
+        FileData(fs::path path, FileDataType dataType);
         FileData(FileData&& other);
         FileData(FileData& other) = delete;
-        FileData(fs::path path);
         std::string getContent();
         fs::path getPath();
+        FileDataType getDataType();
+
+        private:
+        std::variant<std::string, fs::path> m_content, m_filePath;
+        FileDataType m_dataType;
     };
 
     using FileContentMap = std::unordered_map<std::string, FileData>;

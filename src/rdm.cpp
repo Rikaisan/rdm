@@ -112,10 +112,19 @@ int main(int argc, char* argv[]) {
                 for (auto& fileKV : generatedFiles) {
                     LOG_SEP();
                     LOG_CUSTOM(moduleName, fileKV.first << ":");
-                    if (fileKV.second.isRawData) {
-                        LOG("bytes");
-                    } else {
+                    switch (fileKV.second.getDataType()) {
+                        case FileDataType::Text:
                         LOG(fileKV.second.getContent());
+                        break;
+                        case FileDataType::RawData:
+                        LOG("bytes");
+                        break;
+                        case FileDataType::Directory:
+                        LOG("directory");
+                        break;
+                        default:
+                        LOG_ERR("Received a file with an invalid data type: " << fileKV.first);
+                        break;
                     }
                 }
             }
@@ -177,7 +186,7 @@ int main(int argc, char* argv[]) {
 
                 // Do something with the module files
                 for (auto& fileKV : generatedFiles) {
-                    bool isRawData = fileKV.second.isRawData;
+                    FileDataType dataType = fileKV.second.getDataType();
                     std::filesystem::path file = fileKV.first;
                     
                     LOG_DEBUG("Processing: " << file);
@@ -191,12 +200,27 @@ int main(int argc, char* argv[]) {
                             LOG_WARN("File " << file << " already present, skipping...");
                         } else {
                             LOG_INFO("Creating file " << file << "...");
-                            if (isRawData) {
-                                fs::copy_file(fileKV.second.getPath(), file);
-                            } else {
-                                std::ofstream handle = std::ofstream(file);
-                                handle << fileKV.second.getContent();
-                                handle.close();
+                            switch (dataType) {
+                                case FileDataType::Text:
+                                {
+                                    std::ofstream handle = std::ofstream(file);
+                                    handle << fileKV.second.getContent();
+                                    handle.close();
+                                }
+                                break;
+                                case FileDataType::RawData:
+                                {
+                                    fs::copy_file(fileKV.second.getPath(), file);
+                                }
+                                break;
+                                case FileDataType::Directory:
+                                {}
+                                break;
+                                default:
+                                {
+                                    LOG_ERR("Received a file with an invalid data type: " << file);
+                                }
+                                break;
                             }
                         }
                     } else {
@@ -207,12 +231,27 @@ int main(int argc, char* argv[]) {
                             LOG_INFO("Creating file " << file << "...");
                         }
 
-                        if (isRawData) {
-                            fs::copy_file(fileKV.second.getPath(), file);
-                        } else {
-                            std::ofstream handle = std::ofstream(file);
-                            handle << fileKV.second.getContent();
-                            handle.close();
+                        switch (dataType) {
+                            case FileDataType::Text:
+                            {
+                                std::ofstream handle = std::ofstream(file);
+                                handle << fileKV.second.getContent();
+                                handle.close();
+                            }
+                            break;
+                            case FileDataType::RawData:
+                            {
+                                fs::copy_file(fileKV.second.getPath(), file);
+                            }
+                            break;
+                            case FileDataType::Directory:
+                            {}
+                            break;
+                            default:
+                            {
+                                LOG_ERR("Received a file with an invalid data type: " << file);
+                            }
+                            break;
                         }
                     }
                 }

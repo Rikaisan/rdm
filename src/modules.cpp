@@ -12,33 +12,39 @@ namespace rdm {
     fs::path Module::currentlyExecutingFile;
 
     FileData::FileData(std::string content) {
-        isRawData = false;
-        this->content = content;
+        m_dataType = FileDataType::Text;
+        m_content = content;
     }
 
-    FileData::FileData(fs::path path) {
-        isRawData = true;
-        this->filePath = path;
+    FileData::FileData(fs::path path, FileDataType dataType) : m_dataType(dataType) {
+        if (dataType == FileDataType::Text) {
+            m_content = std::string(path);
+        } else {
+            m_filePath = path;
+        }
     }
 
     FileData::FileData(FileData&& other) {
-        if (other.isRawData) {
-            this->isRawData = true;
-            this->filePath = other.filePath;
-            other.filePath = fs::path();
+        m_dataType = other.m_dataType;
+        if (other.m_dataType == FileDataType::Text) {
+            m_content = other.m_content;
+            other.m_content = std::string();
         } else {
-            this->isRawData = false;
-            this->content = other.content;
-            other.content = std::string();
+            m_filePath = other.m_filePath;
+            other.m_filePath = fs::path();
         }
     }
 
     std::string FileData::getContent() {
-    return this->isRawData ? std::string() : std::get<std::string>(this->content);
+    return m_dataType == FileDataType::Text ? std::get<std::string>(m_content) : std::string();
     }
 
     fs::path FileData::getPath() {
-        return this->isRawData ? std::get<fs::path>(this->filePath) : fs::path();
+        return m_dataType != FileDataType::Text ? std::get<fs::path>(m_filePath) : fs::path();
+    }
+
+    FileDataType FileData::getDataType() {
+        return m_dataType;
     }
 
     Module::Module(fs::path modulePath, fs::path destinationRoot)
@@ -78,8 +84,7 @@ namespace rdm {
             if (lua_isstring(m_state, -2)) {
                 std::string key = lua_tostring(m_state, -2);
                 if (lua_isstring(m_state, -1)) {
-                    std::string content = lua_tostring(m_state, -1);
-                    FileData value(content);
+                    FileData value(lua_tostring(m_state, -1));
                     fs::path userPath = m_destinationRoot / key;
                     if (isAllowedPath(m_destinationRoot, userPath, false)) {
                         files.emplace(userPath, std::move(value)); // FIXME: What if the same file is specified twice? (relative paths)
@@ -88,7 +93,7 @@ namespace rdm {
                 else if (lua_istable(m_state, -1)) {
                     int valueType = lua_getfield(m_state, -1, "bytes");
                     if (valueType == LUA_TSTRING) {
-                        FileData data(fs::path(lua_tostring(m_state, -1)));
+                        FileData data(fs::path(lua_tostring(m_state, -1)), FileDataType::RawData);
                         files.emplace(m_destinationRoot / key, std::move(data)); // FIXME: What if the same file is specified twice? (relative paths)
                     }
                     lua_pop(m_state, 1);
