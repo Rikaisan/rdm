@@ -125,7 +125,7 @@ int main(int argc, char* argv[]) {
         auto modulesAndFlags = parseModulesAndFlags(argv + 2, argc - 2);
 
         if (modulesAndFlags.modules.empty()) {
-            LOG_WARN("No modules specified, defaulting to all modules");
+            LOG_INFO("No modules specified, defaulting to all modules");
         } else {
             #ifdef _DEBUG
             LOG_DEBUG("Parsed modules:");
@@ -136,7 +136,7 @@ int main(int argc, char* argv[]) {
         }
 
         if (modulesAndFlags.flags.empty()) {
-            LOG_WARN("No flags specified");
+            LOG_DEBUG("No flags specified");
         } else {
             #ifdef _DEBUG
             LOG_DEBUG("Parsed flags:");
@@ -162,7 +162,7 @@ int main(int argc, char* argv[]) {
 
                 if (generatedFiles.empty()) {
                     if (module.getExitCode() == LUA_OK) {
-                        LOG_WARN("The module '" << module.getName() << "' was found but returned no files.");
+                        LOG_DEBUG("The module '" << module.getName() << "' was found but returned no files.");
                     } else {
                         LOG_ERR("The module '" << module.getName() << "' was found but had errors [" << module.getExitCode() << "]: " << module.getErrorString());
                     }
