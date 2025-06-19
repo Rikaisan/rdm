@@ -83,6 +83,8 @@ int main(int argc, char* argv[]) {
             #endif
         }
 
+        // To let users choose to not run logic if previewing
+        modulesAndFlags.flags.insert("preview");
 
         ModuleManager moduleManager = ModuleManager(RDM_DATA_DIR / "home", getUserHome(), modulesAndFlags);
 
