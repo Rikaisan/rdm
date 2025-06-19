@@ -5,14 +5,27 @@
 #include <filesystem>
 #include <lua.hpp>
 #include <vector>
+#include <variant>
 
 namespace fs = std::filesystem;
 
-using FileContentMap = std::unordered_map<std::string, std::string>;
-using FileList = std::vector<fs::path>;
-
 
 namespace rdm {
+    struct FileData {
+        std::variant<std::string, fs::path> content, filePath;
+        bool isRawData;
+
+        FileData(std::string content);
+        FileData(FileData&& other);
+        FileData(FileData& other) = delete;
+        FileData(fs::path path);
+        std::string getContent();
+        fs::path getPath();
+    };
+
+    using FileContentMap = std::unordered_map<std::string, FileData>;
+    using FileList = std::vector<fs::path>;
+
     struct ModulesAndFlags {
         std::unordered_set<std::string> modules;
         std::unordered_set<std::string> flags;

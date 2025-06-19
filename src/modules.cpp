@@ -11,6 +11,36 @@ namespace rdm {
     std::unordered_set<std::string> ModuleManager::m_userFlags;
     fs::path Module::currentlyExecutingFile;
 
+    FileData::FileData(std::string content) {
+        isRawData = false;
+        this->content = content;
+    }
+
+    FileData::FileData(fs::path path) {
+        isRawData = true;
+        this->filePath = path;
+    }
+
+    FileData::FileData(FileData&& other) {
+        if (other.isRawData) {
+            this->isRawData = true;
+            this->filePath = other.filePath;
+            other.filePath = fs::path();
+        } else {
+            this->isRawData = false;
+            this->content = other.content;
+            other.content = std::string();
+        }
+    }
+
+    std::string FileData::getContent() {
+    return this->isRawData ? std::string() : std::get<std::string>(this->content);
+    }
+
+    fs::path FileData::getPath() {
+        return this->isRawData ? std::get<fs::path>(this->filePath) : fs::path();
+    }
+
     Module::Module(fs::path modulePath, fs::path destinationRoot)
     : m_path(modulePath)
     , m_destinationRoot(destinationRoot)
@@ -39,6 +69,7 @@ namespace rdm {
     }
 
     FileContentMap Module::getGeneratedFiles() const {
+        LOG_DEBUG("Started generating files for " << m_name);
         FileContentMap files;
         if (!lua_istable(m_state, -1)) return FileContentMap();
 
@@ -47,14 +78,26 @@ namespace rdm {
             if (lua_isstring(m_state, -2)) {
                 std::string key = lua_tostring(m_state, -2);
                 if (lua_isstring(m_state, -1)) {
-                    std::string value = lua_tostring(m_state, -1);
-                    if (isAllowedPath(m_destinationRoot, m_destinationRoot / key, false))
-                        files.emplace(m_destinationRoot / key, value); // FIXME: What if the same file is specified twice? (relative paths)
+                    std::string content = lua_tostring(m_state, -1);
+                    FileData value(content);
+                    fs::path userPath = m_destinationRoot / key;
+                    if (isAllowedPath(m_destinationRoot, userPath, false)) {
+                        files.emplace(userPath, std::move(value)); // FIXME: What if the same file is specified twice? (relative paths)
+                    }
+                }
+                else if (lua_istable(m_state, -1)) {
+                    int valueType = lua_getfield(m_state, -1, "bytes");
+                    if (valueType == LUA_TSTRING) {
+                        FileData data(fs::path(lua_tostring(m_state, -1)));
+                        files.emplace(m_destinationRoot / key, std::move(data)); // FIXME: What if the same file is specified twice? (relative paths)
+                    }
+                    lua_pop(m_state, 1);
                 }
             }
             lua_pop(m_state, 1);
         }
 
+        LOG_DEBUG("Finished generating files for " << m_name);
         return files;
     }
 
@@ -73,6 +116,7 @@ namespace rdm {
         lua_register(m_state, "ModuleIsSet", lapi_ModuleIsSet);
         lua_register(m_state, "ForceSpawn", lapi_ForceSpawn);
         lua_register(m_state, "Spawn", lapi_Spawn);
+        lua_register(m_state, "File", lapi_File);
         luaL_openlibs(m_state); // FIXME: Change to only load safe libs (?) maybe allow an --allow-unsafe flag?
         m_luaExitCode = luaL_dofile(m_state, m_path.c_str());
         if (m_luaExitCode != LUA_OK) {
@@ -147,7 +191,7 @@ namespace rdm {
 
         for (auto& pair : m_modules) {
             for (auto& fileKV : pair.second.getGeneratedFiles()) {
-                files.emplace(fileKV.first, fileKV.second); // FIXME: What if the same file is specified twice?
+                files.emplace(fileKV.first, std::move(fileKV.second)); // FIXME: What if the same file is specified twice?
             }
         }
         

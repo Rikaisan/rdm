@@ -1,5 +1,7 @@
 --- @meta
 
+--- @alias FileDescriptor table Describes a file and how it should be parsed by rdm
+
 --- Get the content of a file
 --- @param filename string
 --- @return string|nil
@@ -27,3 +29,8 @@ function Spawn(filename) end
 --- Run a script or binaary, add exec permission if not present
 --- @param filename string
 function ForceSpawn(filename) end
+
+--- Describes that the file must be copied as is (in bytes), useful for non-text files.
+--- @param filename string
+--- @return FileDescriptor|nil
+function File(filename) end

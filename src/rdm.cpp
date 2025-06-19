@@ -62,7 +62,7 @@ int main(int argc, char* argv[]) {
         auto modulesAndFlags = parseModulesAndFlags(argv + 2, argc - 2);
 
         if (modulesAndFlags.modules.empty()) {
-            LOG_WARN("No modules specified, defaulting to all modules");
+            LOG_INFO("No modules specified, defaulting to all modules");
         } else {
             #ifdef _DEBUG
             LOG_DEBUG("Parsed modules:");
@@ -73,7 +73,7 @@ int main(int argc, char* argv[]) {
         }
 
         if (modulesAndFlags.flags.empty()) {
-            LOG_WARN("No flags specified");
+            LOG_DEBUG("No flags specified");
         } else {
             #ifdef _DEBUG
             LOG_DEBUG("Parsed flags:");
@@ -111,8 +111,12 @@ int main(int argc, char* argv[]) {
                 LOG_INFO("Module: " << moduleName);
                 for (auto& fileKV : generatedFiles) {
                     LOG_SEP();
-                    LOG(fileKV.first << ":");
-                    LOG(fileKV.second);
+                    LOG_CUSTOM(moduleName, fileKV.first << ":");
+                    if (fileKV.second.isRawData) {
+                        LOG("bytes");
+                    } else {
+                        LOG(fileKV.second.getContent());
+                    }
                 }
             }
         }
@@ -173,23 +177,27 @@ int main(int argc, char* argv[]) {
 
                 // Do something with the module files
                 for (auto& fileKV : generatedFiles) {
+                    bool isRawData = fileKV.second.isRawData;
                     std::filesystem::path file = fileKV.first;
-                    std::string fileContent = fileKV.second;
-
+                    
                     LOG_DEBUG("Processing: " << file);
                     LOG_DEBUG("File: " << file.stem());
                     LOG_DEBUG("Destination: " << file.parent_path());
 
                     std::filesystem::create_directories(file.parent_path());
-
+                    
                     if (cmd == "apply-soft") {
                         if (std::filesystem::exists(file)) {
                             LOG_WARN("File " << file << " already present, skipping...");
                         } else {
                             LOG_INFO("Creating file " << file << "...");
-                            std::ofstream handle = std::ofstream(file);
-                            handle << fileContent;
-                            handle.close();
+                            if (isRawData) {
+                                fs::copy_file(fileKV.second.getPath(), file);
+                            } else {
+                                std::ofstream handle = std::ofstream(file);
+                                handle << fileKV.second.getContent();
+                                handle.close();
+                            }
                         }
                     } else {
                         if (std::filesystem::exists(file)) { 
@@ -198,9 +206,14 @@ int main(int argc, char* argv[]) {
                         } else {
                             LOG_INFO("Creating file " << file << "...");
                         }
-                        std::ofstream handle = std::ofstream(file);
-                        handle << fileContent;
-                        handle.close();
+
+                        if (isRawData) {
+                            fs::copy_file(fileKV.second.getPath(), file);
+                        } else {
+                            std::ofstream handle = std::ofstream(file);
+                            handle << fileKV.second.getContent();
+                            handle.close();
+                        }
                     }
                 }
             }
@@ -213,6 +226,6 @@ int main(int argc, char* argv[]) {
         LOG("Unrecognized command '" << cmd << "'");
         menus::printMainHelp();
     }
-    
+
     return EXIT_SUCCESS;
 }

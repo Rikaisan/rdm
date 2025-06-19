@@ -44,6 +44,33 @@ namespace rdm {
         return 1;
     }
 
+    int lapi_File(lua_State* L) {
+        if (lua_gettop(L) != 1) {
+            lua_pushnil(L);
+        } else {
+            if (!lua_isstring(L, -1)) {
+                lua_pushnil(L);
+                return 1;
+            }
+
+            std::string fileName = lua_tostring(L, -1);
+
+            fs::path sourceFile(Module::currentlyExecutingFile.parent_path());
+            sourceFile.append(fileName);
+
+            if (!isAllowedPath(Module::currentlyExecutingFile.parent_path(), sourceFile, true)) {
+                lua_pushnil(L);
+                return 1;
+            }
+
+            lua_newtable(L);
+            lua_pushstring(L, "bytes");
+            lua_pushstring(L, sourceFile.c_str());
+            lua_settable(L, -3);
+        }
+        return 1;
+    }
+
     int lapi_Spawn(lua_State* L) {
         if (lua_gettop(L) == 1) {
             if (!lua_isstring(L, -1)) return 0;
