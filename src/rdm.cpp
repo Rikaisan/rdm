@@ -10,7 +10,7 @@
 
 using namespace rdm;
 
-const std::filesystem::path RDM_DATA_DIR = getDataDir();
+const fs::path RDM_DATA_DIR = getDataDir();
 
 ModulesAndFlags parseModulesAndFlags(char* argv[], int count) {
     ModulesAndFlags maf;
@@ -120,7 +120,14 @@ int main(int argc, char* argv[]) {
                         LOG("bytes");
                         break;
                         case FileDataType::Directory:
-                        LOG("directory");
+                        {
+                            fs::path sourcePath = fileKV.second.getPath();
+                            LOG("Copy of directory " << sourcePath.c_str() << ":");
+                            for (auto& file : getDirectoryFilesRecursive(sourcePath)) {
+                                fs::path extraPath = file.lexically_relative(sourcePath);
+                                LOG(" - " << (sourcePath.stem() / extraPath).c_str());
+                            }
+                        }
                         break;
                         default:
                         LOG_ERR("Received a file with an invalid data type: " << fileKV.first);
@@ -187,19 +194,19 @@ int main(int argc, char* argv[]) {
                 // Do something with the module files
                 for (auto& fileKV : generatedFiles) {
                     FileDataType dataType = fileKV.second.getDataType();
-                    std::filesystem::path file = fileKV.first;
+                    fs::path file = fileKV.first;
                     
                     LOG_DEBUG("Processing: " << file);
-                    LOG_DEBUG("File: " << file.stem());
+                    LOG_DEBUG((fileKV.second.getDataType() == FileDataType::Directory ? "Directory: " : "File: ") << file.stem());
                     LOG_DEBUG("Destination: " << file.parent_path());
 
-                    std::filesystem::create_directories(file.parent_path());
+                    fs::create_directories(file.parent_path());
                     
                     if (cmd == "apply-soft") {
-                        if (std::filesystem::exists(file)) {
+                        if (fileKV.second.getDataType() != FileDataType::Directory && fs::exists(file)) {
                             LOG_WARN("File " << file << " already present, skipping...");
                         } else {
-                            LOG_INFO("Creating file " << file << "...");
+                            if (fileKV.second.getDataType() != FileDataType::Directory) LOG_INFO("Creating file " << file << "...");
                             switch (dataType) {
                                 case FileDataType::Text:
                                 {
@@ -214,7 +221,23 @@ int main(int argc, char* argv[]) {
                                 }
                                 break;
                                 case FileDataType::Directory:
-                                {}
+                                {
+                                    fs::path sourcePath = fileKV.second.getPath();
+                                    fs::path destinationPath = file;
+                                    for (auto& file : getDirectoryFilesRecursive(sourcePath)) {
+                                        fs::path extraPath = file.lexically_relative(sourcePath);
+                                        fs::path destinationFile = destinationPath / extraPath;
+
+                                        if (fs::exists(destinationFile)) {
+                                            LOG_WARN("File " << destinationFile << " already present, skipping...");
+                                            continue;
+                                        }
+                                        LOG_INFO("Creating file " << destinationFile << "...");
+
+                                        fs::create_directories(destinationFile.parent_path());
+                                        fs::copy_file(sourcePath / extraPath, destinationFile);
+                                    }
+                                }
                                 break;
                                 default:
                                 {
@@ -224,11 +247,13 @@ int main(int argc, char* argv[]) {
                             }
                         }
                     } else {
-                        if (std::filesystem::exists(file)) { 
-                            LOG_WARN("Replacing file " << file << "...");
-                            std::filesystem::remove(file);
-                        } else {
-                            LOG_INFO("Creating file " << file << "...");
+                        if (fileKV.second.getDataType() != FileDataType::Directory) {
+                            if (fs::exists(file)) { 
+                                LOG_WARN("Replacing " << file << "...");
+                                fs::remove(file);
+                            } else {
+                                LOG_INFO("Creating " << file << "...");
+                            }
                         }
 
                         switch (dataType) {
@@ -245,7 +270,24 @@ int main(int argc, char* argv[]) {
                             }
                             break;
                             case FileDataType::Directory:
-                            {}
+                            {
+                                fs::path sourcePath = fileKV.second.getPath();
+                                fs::path destinationPath = file;
+                                for (auto& file : getDirectoryFilesRecursive(sourcePath)) {
+                                    fs::path extraPath = file.lexically_relative(sourcePath);
+                                    fs::path destinationFile = destinationPath / extraPath;
+
+                                    if (fs::exists(destinationFile)) {
+                                        LOG_WARN("Replacing " << file << "...");
+                                        fs::remove(destinationFile);
+                                    } else {
+                                        LOG_INFO("Creating " << file << "...");
+                                    }
+
+                                    fs::create_directories(destinationFile.parent_path());
+                                    fs::copy_file(sourcePath / extraPath, destinationFile);
+                                }
+                            }
                             break;
                             default:
                             {

@@ -45,30 +45,11 @@ namespace rdm {
     }
 
     int lapi_File(lua_State* L) {
-        if (lua_gettop(L) != 1) {
-            lua_pushnil(L);
-        } else {
-            if (!lua_isstring(L, -1)) {
-                lua_pushnil(L);
-                return 1;
-            }
+        return createFileDescriptor(L, "bytes");
+    }
 
-            std::string fileName = lua_tostring(L, -1);
-
-            fs::path sourceFile(Module::currentlyExecutingFile.parent_path());
-            sourceFile.append(fileName);
-
-            if (!isAllowedPath(Module::currentlyExecutingFile.parent_path(), sourceFile, true)) {
-                lua_pushnil(L);
-                return 1;
-            }
-
-            lua_newtable(L);
-            lua_pushstring(L, "bytes");
-            lua_pushstring(L, sourceFile.c_str());
-            lua_settable(L, -3);
-        }
-        return 1;
+    int lapi_Directory(lua_State* L) {
+        return createFileDescriptor(L, "directory");
     }
 
     int lapi_Spawn(lua_State* L) {
@@ -122,6 +103,36 @@ namespace rdm {
         } else {
             std::string flag = lua_tostring(L, -1);
             lua_pushboolean(L, ModuleManager::isFlagSet(flag));
+        }
+        return 1;
+    }
+
+    int createFileDescriptor(lua_State* L, std::string name) {
+        if (lua_gettop(L) != 1) {
+            lua_pushnil(L);
+        } else {
+            if (!lua_isstring(L, -1)) {
+                lua_pushnil(L);
+                return 1;
+            }
+
+            std::string fileName = lua_tostring(L, -1);
+
+            fs::path sourceFile(Module::currentlyExecutingFile.parent_path());
+            sourceFile.append(fileName);
+
+            if (!isAllowedPath(Module::currentlyExecutingFile.parent_path(), sourceFile, true)) {
+                lua_pushnil(L);
+                return 1;
+            }
+
+            lua_newtable(L);
+            lua_pushstring(L, "type");
+            lua_pushstring(L, name.c_str());
+            lua_settable(L, -3);
+            lua_pushstring(L, "path");
+            lua_pushstring(L, sourceFile.c_str());
+            lua_settable(L, -3);
         }
         return 1;
     }

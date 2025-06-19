@@ -30,7 +30,12 @@ function Spawn(filename) end
 --- @param filename string
 function ForceSpawn(filename) end
 
---- Describes that the file must be copied as is (in bytes), useful for non-text files.
+--- Describes that the file must be copied as is (in bytes), useful for non-text files
 --- @param filename string
 --- @return FileDescriptor|nil
 function File(filename) end
+
+--- Describes that the rdm should copy the entire directory as is
+--- @param filename string
+--- @return FileDescriptor|nil
+function Directory(filename) end

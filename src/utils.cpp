@@ -19,40 +19,40 @@ void rdm::trim(std::string &s) {
     rtrim(s);
 }
 
-std::filesystem::path rdm::getUserHome() {
+fs::path rdm::getUserHome() {
     return std::getenv("HOME");
 }
 
-std::filesystem::path rdm::getDataDir() {
-    std::filesystem::path rdmDataDir;
+fs::path rdm::getDataDir() {
+    fs::path rdmDataDir;
     std::string dataHome = std::getenv("XDG_DATA_HOME") != NULL ? std::getenv("XDG_DATA_HOME") : "";
     trim(dataHome);
     if (dataHome == "" || dataHome.starts_with('.')) {
         std::string userHome = getUserHome();
-        rdmDataDir = std::filesystem::path(userHome);
+        rdmDataDir = fs::path(userHome);
         rdmDataDir /= ".local/share";
     } else {
-        rdmDataDir = std::filesystem::path(dataHome);
+        rdmDataDir = fs::path(dataHome);
     }
     rdmDataDir /= "rdm";
     return rdmDataDir;
 }
 
-bool rdm::isAllowedPath(std::filesystem::path base, std::filesystem::path userPath, bool mustExist) {
+bool rdm::isAllowedPath(fs::path base, fs::path userPath, bool mustExist) {
     LOG_DEBUG("Validating path: " << userPath);
-    std::filesystem::path absoluteBase = std::filesystem::weakly_canonical(base);
-    std::filesystem::path absoluteUser = std::filesystem::weakly_canonical(userPath);
+    fs::path absoluteBase = fs::weakly_canonical(base);
+    fs::path absoluteUser = fs::weakly_canonical(userPath);
 
     LOG_DEBUG("Absolute base: " << absoluteBase);
     LOG_DEBUG("Absolute user: " << absoluteUser);
 
-    if (mustExist && !std::filesystem::exists(absoluteBase)) {
+    if (mustExist && !fs::exists(absoluteBase)) {
         LOG_DEBUG("Path doesn't exist: " << absoluteBase);
         LOG_DEBUG("Denied!");
         return false;
     }
 
-    if (mustExist && !std::filesystem::exists(absoluteUser)) {
+    if (mustExist && !fs::exists(absoluteUser)) {
         LOG_DEBUG("Path doesn't exist: " << absoluteUser);
         LOG_DEBUG("Denied!");
         return false;
@@ -63,20 +63,36 @@ bool rdm::isAllowedPath(std::filesystem::path base, std::filesystem::path userPa
     return isValid;
 }
 
+std::vector<fs::path> rdm::getDirectoryFilesRecursive(fs::path root) {
+    std::vector<fs::path> files;
+    files.reserve(8);
+    for (auto& entry : fs::directory_iterator(root)) {
+        if (entry.is_directory()) {
+            auto nestedFiles = rdm::getDirectoryFilesRecursive(entry.path());
+            for (auto& nestedFile : nestedFiles) {
+                files.push_back(nestedFile);
+            }
+        } else {
+            files.push_back(entry.path());
+        }
+    }
+    return files;
+}
+
 void rdm::ensureDataDirExists() {
     auto dataDir = getDataDir();
-    if (!std::filesystem::exists(dataDir)) {
-        std::filesystem::create_directory(dataDir);
+    if (!fs::exists(dataDir)) {
+        fs::create_directory(dataDir);
     }
     
     auto homeDataDir = getDataDir() / "home";
-    if (!std::filesystem::exists(homeDataDir)) {
-        std::filesystem::create_directory(homeDataDir);
+    if (!fs::exists(homeDataDir)) {
+        fs::create_directory(homeDataDir);
     }
     
     // Maybe have a dirtectory for system files?
     // auto rootDataDir = getDataDir();
-    // if (!std::filesystem::exists(rootDataDir)) {
-    //     std::filesystem::create_directory(rootDataDir);
+    // if (!fs::exists(rootDataDir)) {
+    //     fs::create_directory(rootDataDir);
     // }
 }

@@ -75,34 +75,50 @@ namespace rdm {
     }
 
     FileContentMap Module::getGeneratedFiles() const {
-        LOG_DEBUG("Started generating files for " << m_name);
+        LOG_CUSTOM_DEBUG(m_name, "Started generating files");
         FileContentMap files;
-        if (!lua_istable(m_state, -1)) return FileContentMap();
+        lua_State* L = m_state;
+        if (!lua_istable(L, -1)) return FileContentMap();
 
-        lua_pushnil(m_state);
-        while (lua_next(m_state, -2)) {
-            if (lua_isstring(m_state, -2)) {
-                std::string key = lua_tostring(m_state, -2);
-                if (lua_isstring(m_state, -1)) {
-                    FileData value(lua_tostring(m_state, -1));
+        lua_pushnil(L);
+        while (lua_next(L, -2)) {
+            if (lua_isstring(L, -2)) {
+                std::string key = lua_tostring(L, -2);
+                if (lua_isstring(L, -1)) {
+                    FileData value(lua_tostring(L, -1));
                     fs::path userPath = m_destinationRoot / key;
                     if (isAllowedPath(m_destinationRoot, userPath, false)) {
+                        LOG_CUSTOM_DEBUG(m_name, "Added text file");
                         files.emplace(userPath, std::move(value)); // FIXME: What if the same file is specified twice? (relative paths)
                     }
                 }
-                else if (lua_istable(m_state, -1)) {
-                    int valueType = lua_getfield(m_state, -1, "bytes");
+                else if (lua_istable(L, -1)) {
+                    LOG_CUSTOM_DEBUG(m_name, "Found FileDescriptor");
+                    int valueType = lua_getfield(L, -1, "type");
                     if (valueType == LUA_TSTRING) {
-                        FileData data(fs::path(lua_tostring(m_state, -1)), FileDataType::RawData);
-                        files.emplace(m_destinationRoot / key, std::move(data)); // FIXME: What if the same file is specified twice? (relative paths)
+                        std::string dataType = lua_tostring(L, -1);
+                        LOG_CUSTOM_DEBUG(m_name, "FileDescriptor type: " << dataType);
+                        if (dataType == "bytes" || dataType == "directory") {
+                            int path = lua_getfield(L, -2, "path");
+                            if (path == LUA_TSTRING) {
+                                FileDataType fileDataType = FileDataType::RawData;
+                                if (dataType == "directory") fileDataType = FileDataType::Directory;
+                                FileData data(fs::path(lua_tostring(L, -1)), fileDataType);
+                                LOG_CUSTOM_DEBUG(m_name, "Added file with type " << dataType);
+                                files.emplace(m_destinationRoot / key, std::move(data)); // FIXME: What if the same file is specified twice? (relative paths)
+                            } else {
+                                LOG_CUSTOM_DEBUG(m_name, "Invalid or non-present 'path'");
+                            }
+                            lua_pop(L, 1);
+                        }
                     }
-                    lua_pop(m_state, 1);
+                    lua_pop(L, 1);
                 }
             }
-            lua_pop(m_state, 1);
+            lua_pop(L, 1);
         }
 
-        LOG_DEBUG("Finished generating files for " << m_name);
+        LOG_CUSTOM_DEBUG(m_name, "Finished generating files");
         return files;
     }
 
@@ -122,6 +138,7 @@ namespace rdm {
         lua_register(m_state, "ForceSpawn", lapi_ForceSpawn);
         lua_register(m_state, "Spawn", lapi_Spawn);
         lua_register(m_state, "File", lapi_File);
+        lua_register(m_state, "Directory", lapi_Directory);
         luaL_openlibs(m_state); // FIXME: Change to only load safe libs (?) maybe allow an --allow-unsafe flag?
         m_luaExitCode = luaL_dofile(m_state, m_path.c_str());
         if (m_luaExitCode != LUA_OK) {
