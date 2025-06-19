@@ -10,10 +10,10 @@ namespace fs = std::filesystem;
 namespace rdm {
     int lapi_Read(lua_State* L) {
         if (lua_gettop(L) != 1) {
-            lua_pushstring(L, "");
+            lua_pushnil(L);
         } else {
             if (!lua_isstring(L, -1)) {
-                lua_pushstring(L, "");
+                lua_pushnil(L);
                 return 1;
             }
 
@@ -23,7 +23,7 @@ namespace rdm {
             fileToRead.append(fileName);
 
             if (!isAllowedPath(Module::currentlyExecutingFile.parent_path(), fileToRead, true)) {
-                lua_pushstring(L, "");
+                lua_pushnil(L);
                 return 1;
             }
 

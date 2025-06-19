@@ -2,7 +2,7 @@
 
 --- Get the content of a file
 --- @param filename string
---- @return string
+--- @return string|nil
 function Read(filename) end
 
 --- Get a boolean representing if a specific flag was specified by the user
