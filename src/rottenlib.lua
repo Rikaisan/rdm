@@ -19,3 +19,11 @@ function FlagIsSet(flag) end
 --- @param module string
 --- @return boolean
 function ModuleIsSet(module) end
+
+--- Run a script or binaary
+--- @param filename string
+function Spawn(filename) end
+
+--- Run a script or binaary, add exec permission if not present
+--- @param filename string
+function ForceSpawn(filename) end

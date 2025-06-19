@@ -1,6 +1,7 @@
 #include "modules.hpp"
 #include "Logger.hpp"
 #include "utils.hpp"
+#include <cstdlib>
 #include <fstream>
 #include <string>
 
@@ -46,6 +47,39 @@ namespace rdm {
             lua_pushstring(L, buff.c_str());
         }
         return 1;
+    }
+
+    int lapi_Spawn(lua_State* L) {
+        if (lua_gettop(L) == 1) {
+            if (!lua_isstring(L, -1)) return 0;
+
+            std::string fileName = lua_tostring(L, -1);
+
+            fs::path fileToExec(currentlyExecutingFile.parent_path());
+            fileToExec.append(fileName);
+
+            if (!isAllowedPath(currentlyExecutingFile.parent_path(), fileToExec, true)) return 0;
+
+            std::system(fileToExec.c_str());
+        }
+        return 0;
+    }
+
+    int lapi_ForceSpawn(lua_State* L) {
+        if (lua_gettop(L) == 1) {
+            if (!lua_isstring(L, -1)) return 0;
+
+            std::string fileName = lua_tostring(L, -1);
+
+            fs::path fileToExec(currentlyExecutingFile.parent_path());
+            fileToExec.append(fileName);
+
+            if (!isAllowedPath(currentlyExecutingFile.parent_path(), fileToExec, true)) return 0;
+
+            std::filesystem::permissions(fileToExec, std::filesystem::perms::owner_exec, std::filesystem::perm_options::add);
+            std::system(fileToExec.c_str());
+        }
+        return 0;
     }
 
     int lapi_ModuleIsSet(lua_State* L) {
@@ -130,6 +164,8 @@ namespace rdm {
         lua_register(m_state, "FlagIsSet", lapi_FlagIsSet);
         lua_register(m_state, "OptionIsSet", lapi_FlagIsSet);
         lua_register(m_state, "ModuleIsSet", lapi_ModuleIsSet);
+        lua_register(m_state, "ForceSpawn", lapi_ForceSpawn);
+        lua_register(m_state, "Spawn", lapi_Spawn);
         luaL_openlibs(m_state); // FIXME: Change to only load safe libs (?) maybe allow an --allow-unsafe flag?
         m_luaExitCode = luaL_dofile(m_state, m_path.c_str());
         if (m_luaExitCode != LUA_OK) {
