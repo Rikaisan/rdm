@@ -34,12 +34,12 @@ namespace rdm {
         std::string getName() const;
         ~Module();
 
+        static std::string getNameFromPath(std::filesystem::path path);
+
         static fs::path currentlyExecutingFile;
 
         private:
         int setupLuaState();
-
-        static std::string getNameFromPath(std::filesystem::path path);
 
         const fs::path m_path;
         const fs::path m_destinationRoot;

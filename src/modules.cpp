@@ -119,18 +119,6 @@ namespace rdm {
         return m_modules;
     }
 
-    FileContentMap ModuleManager::getGeneratedFiles() {
-        FileContentMap files;
-
-        for (auto& pair : m_modules) {
-            for (auto& fileKV : pair.second.getGeneratedFiles()) {
-                files.emplace(fileKV.first, fileKV.second); // FIXME: What if the same file is specified twice?
-            }
-        }
-        
-        return files;
-    }
-
     ModuleList ModuleManager::getModules(fs::path root, fs::path destinationRoot) {
         ModuleList modules;
         modules.reserve(32);
@@ -144,15 +132,26 @@ namespace rdm {
                 }
             } else {
                 std::string fileName = filePath.filename();
-                if (fileName.starts_with(MODULE_PREFIX) && fileName.ends_with(".lua")) {
+                if (fileName.starts_with(MODULE_PREFIX) && fileName.ends_with(".lua") && m_userModules.contains(Module::getNameFromPath(fileName))) {
                     Module module = Module(filePath, destinationRoot);
                     modules.emplace(module.getName(), std::move(module));
                 }
             }
         }
 
-
         return modules;
+    }
+
+    FileContentMap ModuleManager::getGeneratedFiles() {
+        FileContentMap files;
+
+        for (auto& pair : m_modules) {
+            for (auto& fileKV : pair.second.getGeneratedFiles()) {
+                files.emplace(fileKV.first, fileKV.second); // FIXME: What if the same file is specified twice?
+            }
+        }
+        
+        return files;
     }
 
     bool ModuleManager::isFlagSet(std::string flag) {
