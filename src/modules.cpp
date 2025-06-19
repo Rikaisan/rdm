@@ -1,108 +1,15 @@
 #include "modules.hpp"
+#include <string>
 #include "Logger.hpp"
 #include "utils.hpp"
-#include <cstdlib>
-#include <fstream>
-#include <string>
+#include "api.hpp"
 
 namespace rdm {
-    fs::path currentlyExecutingFile;
-
     const std::string ModuleManager::MODULE_PREFIX = "rdm-";
-    const char* Module::LUA_FILE_DIR = "RDM_FILE_ROOT";
+    const char* Module::LUA_FILE_DIR = "MODULE_ROOT";
     std::unordered_set<std::string> ModuleManager::m_userModules;
     std::unordered_set<std::string> ModuleManager::m_userFlags;
-
-    int lapi_Read(lua_State* L) {
-        if (lua_gettop(L) != 1) {
-            lua_pushstring(L, "");
-        } else {
-            if (!lua_isstring(L, -1)) {
-                lua_pushstring(L, "");
-                return 1;
-            }
-
-            std::string fileName = lua_tostring(L, -1);
-
-            fs::path fileToRead(currentlyExecutingFile.parent_path());
-            fileToRead.append(fileName);
-
-            if (!isAllowedPath(currentlyExecutingFile.parent_path(), fileToRead, true)) {
-                lua_pushstring(L, "");
-                return 1;
-            }
-
-            std::string buff;
-            std::ifstream file;
-            file.open(fileToRead);
-            if (file.is_open()) {
-                std::string line;
-                while (getline(file, line)) {
-                    buff.append(line);
-                    buff.append("\n");
-                }
-                buff.pop_back();
-                file.close();
-            }
-            lua_pushstring(L, buff.c_str());
-        }
-        return 1;
-    }
-
-    int lapi_Spawn(lua_State* L) {
-        if (lua_gettop(L) == 1) {
-            if (!lua_isstring(L, -1)) return 0;
-
-            std::string fileName = lua_tostring(L, -1);
-
-            fs::path fileToExec(currentlyExecutingFile.parent_path());
-            fileToExec.append(fileName);
-
-            if (!isAllowedPath(currentlyExecutingFile.parent_path(), fileToExec, true)) return 0;
-
-            std::system(fileToExec.c_str());
-        }
-        return 0;
-    }
-
-    int lapi_ForceSpawn(lua_State* L) {
-        if (lua_gettop(L) == 1) {
-            if (!lua_isstring(L, -1)) return 0;
-
-            std::string fileName = lua_tostring(L, -1);
-
-            fs::path fileToExec(currentlyExecutingFile.parent_path());
-            fileToExec.append(fileName);
-
-            if (!isAllowedPath(currentlyExecutingFile.parent_path(), fileToExec, true)) return 0;
-
-            std::filesystem::permissions(fileToExec, std::filesystem::perms::owner_exec, std::filesystem::perm_options::add);
-            std::system(fileToExec.c_str());
-        }
-        return 0;
-    }
-
-    int lapi_ModuleIsSet(lua_State* L) {
-        int argc = lua_gettop(L);
-        if (argc != 1 || !lua_isstring(L, -1)) {
-            lua_pushboolean(L, 0);
-        } else {
-            std::string module = lua_tostring(L, -1);
-            lua_pushboolean(L, ModuleManager::isModuleSet(module));
-        }
-        return 1;
-    }
-
-    int lapi_FlagIsSet(lua_State* L) {
-        int argc = lua_gettop(L);
-        if (argc != 1 || !lua_isstring(L, -1)) {
-            lua_pushboolean(L, 0);
-        } else {
-            std::string flag = lua_tostring(L, -1);
-            lua_pushboolean(L, ModuleManager::isFlagSet(flag));
-        }
-        return 1;
-    }
+    fs::path Module::currentlyExecutingFile;
 
     Module::Module(fs::path modulePath, fs::path destinationRoot)
     : m_path(modulePath)

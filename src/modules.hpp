@@ -20,9 +20,6 @@ namespace rdm {
 
     class Module;
     using ModuleList = std::unordered_map<std::string, Module>;
-
-    int lapi_Read(lua_State* L);
-    int lapi_OptionIsSet(lua_State* L);
     
     class Module {
         public:
@@ -36,6 +33,8 @@ namespace rdm {
         std::string getErrorString() const;
         std::string getName() const;
         ~Module();
+
+        static fs::path currentlyExecutingFile;
 
         private:
         int setupLuaState();
