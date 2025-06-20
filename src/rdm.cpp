@@ -44,6 +44,7 @@ ModulesAndFlags parseModulesAndFlags(char* argv[], int count) {
 
 int main(int argc, char* argv[]) {
     ensureDataDirExists();
+    copyRDMLib();
 
     if (argc == 1) {
         menus::printMainHelp();
@@ -125,7 +126,7 @@ int main(int argc, char* argv[]) {
                             LOG("Copy of directory " << sourcePath.c_str() << ":");
                             for (auto& file : getDirectoryFilesRecursive(sourcePath)) {
                                 fs::path extraPath = file.lexically_relative(sourcePath);
-                                LOG(" - " << (sourcePath.stem() / extraPath).c_str());
+                                LOG(" - " << (fileKV.first / extraPath).c_str());
                             }
                         }
                         break;

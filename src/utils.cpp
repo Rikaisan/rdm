@@ -2,6 +2,9 @@
 #include "Logger.hpp"
 #include <algorithm>
 
+#include "rdmlib.hpp"
+#include <fstream>
+
 inline void rdm::ltrim(std::string &s) {
     s.erase(s.begin(), std::find_if(s.begin(), s.end(), [](unsigned char ch) {
         return !std::isspace(ch);
@@ -95,4 +98,19 @@ void rdm::ensureDataDirExists() {
     // if (!fs::exists(rootDataDir)) {
     //     fs::create_directory(rootDataDir);
     // }
+}
+
+// TODO: Return true when it was able to copy it from the system location, false if it used the embedded one
+bool rdm::copyRDMLib() {
+    fs::path libPath = getDataDir() / "rdmlib.lua";
+    if (fs::exists(libPath))
+        fs::remove(libPath);
+    
+    std::ofstream libFile(libPath, std::fstream::binary | std::fstream::out);
+    if (libFile.is_open()) {
+        libFile.write(src_rdmlib_lua, src_rdmlib_lua_len);
+        libFile.close();
+    }
+
+    return false;
 }

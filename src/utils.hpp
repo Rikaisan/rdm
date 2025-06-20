@@ -16,4 +16,5 @@ namespace rdm {
     fs::path getDataDir();
     fs::path getUserHome();
     void ensureDataDirExists();
+    bool copyRDMLib();
 }
