@@ -48,7 +48,8 @@ namespace rdm {
         Module(Module&& other);
         Module(Module& other) = delete;
         Module& operator=(const Module&) = delete;
-        FileContentMap getGeneratedFiles() const;
+        FileContentMap getGeneratedFiles();
+        bool runDelayed();
         std::string getPath() const;
         int getExitCode() const;
         std::string getErrorString() const;
@@ -61,6 +62,7 @@ namespace rdm {
 
         private:
         int setupLuaState();
+        bool callLuaMethod(std::string name);
 
         const fs::path m_path;
         const fs::path m_destinationRoot;
@@ -78,7 +80,7 @@ namespace rdm {
         ModuleManager(fs::path root, fs::path destinationRoot);
         ModuleManager(fs::path root, fs::path destinationRoot, ModulesAndFlags& maf);
         void refreshModules();
-        const ModuleList& getModules();
+        ModuleList& getModules();
         FileContentMap getGeneratedFiles();
 
         static bool shouldProcessAllModules();

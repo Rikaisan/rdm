@@ -74,10 +74,21 @@ namespace rdm {
         return m_luaErrorString;
     }
 
-    FileContentMap Module::getGeneratedFiles() const {
+    FileContentMap Module::getGeneratedFiles() {
         LOG_CUSTOM_DEBUG(m_name, "Started generating files");
         FileContentMap files;
         lua_State* L = m_state;
+        if (lua_getglobal(L, "RDM_GetFiles") != LUA_TFUNCTION) {
+            lua_pop(L, 1);
+            return FileContentMap();
+        }
+
+        m_luaExitCode = lua_pcall(L, 0, 1, 0);
+        if (m_luaExitCode != LUA_OK) {
+            m_luaErrorString = lua_tostring(m_state, -1);
+            return FileContentMap();
+        }
+
         if (!lua_istable(L, -1)) return FileContentMap();
 
         lua_pushnil(L);
@@ -143,6 +154,8 @@ namespace rdm {
         m_luaExitCode = luaL_dofile(m_state, m_path.c_str());
         if (m_luaExitCode != LUA_OK) {
             m_luaErrorString = lua_tostring(m_state, -1);
+        } else {
+            callLuaMethod("RDM_Init");
         }
         return m_luaExitCode;
     }
@@ -150,6 +163,25 @@ namespace rdm {
     std::string Module::getNameFromPath(std::filesystem::path path) {
         return path.stem().string().substr(ModuleManager::MODULE_PREFIX.length());
     }
+
+    bool Module::runDelayed() {
+        return callLuaMethod("RDM_Delayed");
+    }
+
+    bool Module::callLuaMethod(std::string name) {
+        if (lua_getglobal(m_state, name.c_str()) == LUA_TFUNCTION) {
+            m_luaExitCode = lua_pcall(m_state, 0, 0, 0);
+            if (m_luaExitCode != LUA_OK) {
+                m_luaErrorString = lua_tostring(m_state, -1);
+                return false;
+            }
+            return true;
+        } else {
+            lua_pop(m_state, 1);
+            return false;
+        }
+    }
+
 
     ModuleManager::ModuleManager(fs::path root, fs::path destinationRoot)
     : m_root(root)
@@ -181,7 +213,7 @@ namespace rdm {
         m_modules = ModuleManager::getModules(m_root, m_destinationRoot);
     }
 
-    const ModuleList& ModuleManager::getModules() {
+    ModuleList& ModuleManager::getModules() {
         return m_modules;
     }
 
@@ -198,7 +230,7 @@ namespace rdm {
                 }
             } else {
                 std::string fileName = filePath.filename();
-                if (fileName.starts_with(MODULE_PREFIX) && fileName.ends_with(".lua") && m_userModules.contains(Module::getNameFromPath(fileName))) {
+                if (fileName.starts_with(MODULE_PREFIX) && fileName.ends_with(".lua") && shouldProcessModule(Module::getNameFromPath(fileName))) {
                     Module module = Module(filePath, destinationRoot);
                     modules.emplace(module.getName(), std::move(module));
                 }

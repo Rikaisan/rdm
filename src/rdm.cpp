@@ -135,6 +135,7 @@ int main(int argc, char* argv[]) {
                         break;
                     }
                 }
+                module.runDelayed();
             }
         }
         LOG_SEP();
@@ -298,6 +299,7 @@ int main(int argc, char* argv[]) {
                         }
                     }
                 }
+                module.runDelayed();
             }
         }
     } else if (cmd == "init") {
