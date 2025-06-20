@@ -58,13 +58,13 @@ namespace rdm {
 
         static std::string getNameFromPath(std::filesystem::path path);
 
-        static fs::path currentlyExecutingFile;
+        static fs::path s_currentlyExecutingFile;
 
         private:
         int setupLuaState();
         bool callLuaMethod(std::string name);
 
-        const fs::path m_path;
+        const fs::path m_modulePath;
         const fs::path m_destinationRoot;
         const std::string m_name;
 
@@ -93,7 +93,7 @@ namespace rdm {
         const fs::path m_root;
         const fs::path m_destinationRoot;
         ModuleList m_modules;
-        static std::unordered_set<std::string> m_userModules;
-        static std::unordered_set<std::string> m_userFlags;
+        static std::unordered_set<std::string> s_userModules;
+        static std::unordered_set<std::string> s_userFlags;
     };
 }

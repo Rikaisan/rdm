@@ -7,9 +7,9 @@
 namespace rdm {
     const std::string ModuleManager::MODULE_PREFIX = "rdm-";
     const char* Module::LUA_FILE_DIR = "MODULE_ROOT";
-    std::unordered_set<std::string> ModuleManager::m_userModules;
-    std::unordered_set<std::string> ModuleManager::m_userFlags;
-    fs::path Module::currentlyExecutingFile;
+    std::unordered_set<std::string> ModuleManager::s_userModules;
+    std::unordered_set<std::string> ModuleManager::s_userFlags;
+    fs::path Module::s_currentlyExecutingFile;
 
     FileData::FileData(std::string content) {
         m_dataType = FileDataType::Text;
@@ -48,14 +48,14 @@ namespace rdm {
     }
 
     Module::Module(fs::path modulePath, fs::path destinationRoot)
-    : m_path(modulePath)
+    : m_modulePath(modulePath)
     , m_destinationRoot(destinationRoot)
     , m_name(Module::getNameFromPath(modulePath)) {
         this->setupLuaState();
     }
 
     Module::Module(Module&& other)
-    : m_path(std::move(other.m_path))
+    : m_modulePath(std::move(other.m_modulePath))
     , m_destinationRoot(std::move(other.m_destinationRoot))
     , m_name(std::move(other.m_name))
     , m_state(other.m_state)
@@ -133,14 +133,14 @@ namespace rdm {
         return files;
     }
 
-    std::string Module::getPath() const { return m_path; }
+    std::string Module::getPath() const { return m_modulePath; }
 
     std::string Module::getName() const { return m_name; }
 
     int Module::setupLuaState() {
-        currentlyExecutingFile = m_path;
+        s_currentlyExecutingFile = m_modulePath;
         m_state = luaL_newstate();
-        lua_pushstring(m_state, m_path.parent_path().c_str());
+        lua_pushstring(m_state, m_modulePath.parent_path().c_str());
         lua_setglobal(m_state, LUA_FILE_DIR);
         lua_register(m_state, "Read", lapi_Read);
         lua_register(m_state, "FlagIsSet", lapi_FlagIsSet);
@@ -151,7 +151,7 @@ namespace rdm {
         lua_register(m_state, "File", lapi_File);
         lua_register(m_state, "Directory", lapi_Directory);
         luaL_openlibs(m_state); // FIXME: Change to only load safe libs (?) maybe allow an --allow-unsafe flag?
-        m_luaExitCode = luaL_dofile(m_state, m_path.c_str());
+        m_luaExitCode = luaL_dofile(m_state, m_modulePath.c_str());
         if (m_luaExitCode != LUA_OK) {
             m_luaErrorString = lua_tostring(m_state, -1);
         } else {
@@ -194,17 +194,17 @@ namespace rdm {
     : m_root(root)
     , m_destinationRoot(destinationRoot)
     {
-        ModuleManager::m_userModules = std::unordered_set<std::string>();
-        ModuleManager::m_userFlags = std::unordered_set<std::string>();
+        ModuleManager::s_userModules = std::unordered_set<std::string>();
+        ModuleManager::s_userFlags = std::unordered_set<std::string>();
 
-        m_userFlags.reserve(m_userFlags.size());
+        s_userFlags.reserve(s_userFlags.size());
         for (auto& flag : maf.flags) {
-            m_userFlags.insert(flag);
+            s_userFlags.insert(flag);
         }
 
-        m_userModules.reserve(m_userModules.size());
+        s_userModules.reserve(s_userModules.size());
         for (auto& module : maf.modules) {
-            m_userModules.insert(module);
+            s_userModules.insert(module);
         }
         this->refreshModules();
     }
@@ -253,14 +253,14 @@ namespace rdm {
     }
 
     bool ModuleManager::isFlagSet(std::string flag) {
-        return m_userFlags.contains(flag);
+        return s_userFlags.contains(flag);
     }
 
     bool ModuleManager::shouldProcessAllModules() {
-        return m_userModules.empty();
+        return s_userModules.empty();
     }
 
     bool ModuleManager::shouldProcessModule(std::string module) {
-        return shouldProcessAllModules() || m_userModules.contains(module);
+        return shouldProcessAllModules() || s_userModules.contains(module);
     }
 }

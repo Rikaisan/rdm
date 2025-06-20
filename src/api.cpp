@@ -19,10 +19,10 @@ namespace rdm {
 
             std::string fileName = lua_tostring(L, -1);
 
-            fs::path fileToRead(Module::currentlyExecutingFile.parent_path());
+            fs::path fileToRead(Module::s_currentlyExecutingFile.parent_path());
             fileToRead.append(fileName);
 
-            if (!isAllowedPath(Module::currentlyExecutingFile.parent_path(), fileToRead, true)) {
+            if (!isAllowedPath(Module::s_currentlyExecutingFile.parent_path(), fileToRead, true)) {
                 lua_pushnil(L);
                 return 1;
             }
@@ -58,10 +58,10 @@ namespace rdm {
 
             std::string fileName = lua_tostring(L, -1);
 
-            fs::path fileToExec(Module::currentlyExecutingFile.parent_path());
+            fs::path fileToExec(Module::s_currentlyExecutingFile.parent_path());
             fileToExec.append(fileName);
 
-            if (!isAllowedPath(Module::currentlyExecutingFile.parent_path(), fileToExec, true)) return 0;
+            if (!isAllowedPath(Module::s_currentlyExecutingFile.parent_path(), fileToExec, true)) return 0;
 
             std::system(fileToExec.c_str());
         }
@@ -74,10 +74,10 @@ namespace rdm {
 
             std::string fileName = lua_tostring(L, -1);
 
-            fs::path fileToExec(Module::currentlyExecutingFile.parent_path());
+            fs::path fileToExec(Module::s_currentlyExecutingFile.parent_path());
             fileToExec.append(fileName);
 
-            if (!isAllowedPath(Module::currentlyExecutingFile.parent_path(), fileToExec, true)) return 0;
+            if (!isAllowedPath(Module::s_currentlyExecutingFile.parent_path(), fileToExec, true)) return 0;
 
             std::filesystem::permissions(fileToExec, std::filesystem::perms::owner_exec, std::filesystem::perm_options::add);
             std::system(fileToExec.c_str());
@@ -118,10 +118,10 @@ namespace rdm {
 
             std::string fileName = lua_tostring(L, -1);
 
-            fs::path sourceFile(Module::currentlyExecutingFile.parent_path());
+            fs::path sourceFile(Module::s_currentlyExecutingFile.parent_path());
             sourceFile.append(fileName);
 
-            if (!isAllowedPath(Module::currentlyExecutingFile.parent_path(), sourceFile, true)) {
+            if (!isAllowedPath(Module::s_currentlyExecutingFile.parent_path(), sourceFile, true)) {
                 lua_pushnil(L);
                 return 1;
             }
