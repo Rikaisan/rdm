@@ -91,7 +91,7 @@ namespace rdm {
             lua_pushboolean(L, 0);
         } else {
             std::string module = lua_tostring(L, -1);
-            lua_pushboolean(L, ModuleManager::isModuleSet(module));
+            lua_pushboolean(L, ModuleManager::shouldProcessModule(module));
         }
         return 1;
     }

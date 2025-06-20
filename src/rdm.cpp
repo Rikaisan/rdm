@@ -96,7 +96,7 @@ int main(int argc, char* argv[]) {
         }
 
         for (auto& [moduleName, module]: moduleManager.getModules()) {
-            if (moduleManager.shouldProcessAllModules() || moduleManager.shouldProcessModule(module.getName())) {
+            if (moduleManager.shouldProcessModule(module.getName())) {
                 FileContentMap generatedFiles = module.getGeneratedFiles();
 
                 LOG_SEP();
@@ -180,7 +180,7 @@ int main(int argc, char* argv[]) {
         }
 
         for (auto& [moduleName, module]: moduleManager.getModules()) {
-            if (moduleManager.shouldProcessAllModules() || moduleManager.shouldProcessModule(module.getName())) {
+            if (moduleManager.shouldProcessModule(module.getName())) {
                 FileContentMap generatedFiles = module.getGeneratedFiles();
 
                 if (generatedFiles.empty()) {
