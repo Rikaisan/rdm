@@ -280,10 +280,10 @@ int main(int argc, char* argv[]) {
                                     fs::path destinationFile = destinationPath / extraPath;
 
                                     if (fs::exists(destinationFile)) {
-                                        LOG_WARN("Replacing " << file << "...");
+                                        LOG_WARN("Replacing " << destinationFile << "...");
                                         fs::remove(destinationFile);
                                     } else {
-                                        LOG_INFO("Creating " << file << "...");
+                                        LOG_INFO("Creating " << destinationFile << "...");
                                     }
 
                                     fs::create_directories(destinationFile.parent_path());
