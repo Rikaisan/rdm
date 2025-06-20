@@ -118,7 +118,7 @@ int main(int argc, char* argv[]) {
                         LOG(fileKV.second.getContent());
                         break;
                         case FileDataType::RawData:
-                        LOG("bytes");
+                        LOG("Raw Copy");
                         break;
                         case FileDataType::Directory:
                         {
