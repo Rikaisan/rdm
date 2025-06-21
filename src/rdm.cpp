@@ -318,6 +318,8 @@ int main(int argc, char* argv[]) {
         LOG_ERR("Unimplemented");
         menus::printInitHelp();
         return EXIT_FAILURE;
+    } else if (cmd == "dir") {
+        LOG(RDM_DATA_DIR.c_str());
     } else {
         LOG("Unrecognized command '" << cmd << "'");
         menus::printMainHelp();

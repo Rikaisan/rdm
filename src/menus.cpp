@@ -5,6 +5,7 @@ namespace rdm::menus {
         LOG("Usage: rdm <command> [args...]");
         LOG(" apply             Runs the scripts");
         LOG(" apply-soft        Runs the scripts but doesn't replace existing files");
+        LOG(" dir               Print RDM_DATA_DIR to stdout, useful to quickly cd with 'cd $(rdm dir)'");
         LOG(" init              Initializes rdm with a git repository");
         LOG(" preview           Preview a specific module output");
     }
@@ -14,6 +15,11 @@ namespace rdm::menus {
         LOG(" module            The name of the module to apply (e.g. rdm-hyprland.lua -> hyprland), leave empty for all modules");
         LOG("Options:");
         LOG(" -f,--flags        A space separated list of flags that should be passed to the modules");
+    }
+
+    void printDirHelp() {
+        LOG("Usage: rdm dir");
+        LOG(" Print RDM_DATA_DIR to stdout, useful to quickly cd with 'cd $(rdm dir)'");
     }
 
     void printInitHelp() {
