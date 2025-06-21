@@ -229,15 +229,21 @@ int main(int argc, char* argv[]) {
                                     for (auto& file : getDirectoryFilesRecursive(sourcePath)) {
                                         fs::path extraPath = file.lexically_relative(sourcePath);
                                         fs::path destinationFile = destinationPath / extraPath;
+                                        fs::path sourceFile = sourcePath / extraPath;
 
-                                        if (fs::exists(destinationFile)) {
+                                        if (fs::exists(fs::symlink_status(destinationFile))) {
                                             LOG_WARN("File " << destinationFile << " already present, skipping...");
                                             continue;
                                         }
                                         LOG_INFO("Creating file " << destinationFile << "...");
 
                                         fs::create_directories(destinationFile.parent_path());
-                                        fs::copy_file(sourcePath / extraPath, destinationFile);
+
+                                        if (fs::is_symlink(sourceFile)) {
+                                            fs::copy_symlink(sourceFile, destinationFile);
+                                        } else {
+                                            fs::copy_file(sourceFile, destinationFile);
+                                        }
                                     }
                                 }
                                 break;
@@ -278,8 +284,9 @@ int main(int argc, char* argv[]) {
                                 for (auto& file : getDirectoryFilesRecursive(sourcePath)) {
                                     fs::path extraPath = file.lexically_relative(sourcePath);
                                     fs::path destinationFile = destinationPath / extraPath;
+                                    fs::path sourceFile = sourcePath / extraPath;
 
-                                    if (fs::exists(destinationFile)) {
+                                    if (fs::exists(fs::symlink_status(destinationFile))) {
                                         LOG_WARN("Replacing " << destinationFile << "...");
                                         fs::remove(destinationFile);
                                     } else {
@@ -287,7 +294,12 @@ int main(int argc, char* argv[]) {
                                     }
 
                                     fs::create_directories(destinationFile.parent_path());
-                                    fs::copy_file(sourcePath / extraPath, destinationFile);
+
+                                    if (fs::is_symlink(sourceFile)) {
+                                        fs::copy_symlink(sourceFile, destinationFile);
+                                    } else {
+                                        fs::copy_file(sourceFile, destinationFile);
+                                    }
                                 }
                             }
                             break;

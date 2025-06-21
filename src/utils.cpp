@@ -70,7 +70,7 @@ std::vector<fs::path> rdm::getDirectoryFilesRecursive(fs::path root) {
     std::vector<fs::path> files;
     files.reserve(8);
     for (auto& entry : fs::directory_iterator(root)) {
-        if (entry.is_directory()) {
+        if (entry.is_directory() && !entry.is_symlink()) {
             auto nestedFiles = rdm::getDirectoryFilesRecursive(entry.path());
             for (auto& nestedFile : nestedFiles) {
                 files.push_back(nestedFile);
