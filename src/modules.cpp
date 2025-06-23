@@ -144,7 +144,6 @@ namespace rdm {
         lua_setglobal(m_state, LUA_FILE_DIR);
         lua_register(m_state, "Read", lapi_Read);
         lua_register(m_state, "FlagIsSet", lapi_FlagIsSet);
-        lua_register(m_state, "OptionIsSet", lapi_FlagIsSet);
         lua_register(m_state, "ModuleIsSet", lapi_ModuleIsSet);
         lua_register(m_state, "ForceSpawn", lapi_ForceSpawn);
         lua_register(m_state, "Spawn", lapi_Spawn);
