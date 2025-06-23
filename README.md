@@ -33,6 +33,14 @@ end
 ### To setup RDM in a new machine
 1. Initialize RDM with `rdm clone <repo_url>`
 2. Apply modules with `rdm apply [modules...] [-f <flags...>]`
+
+## Building
+1. Clone the repository `git clone https://github.com/Rikaisan/rdm`
+2. cd into it `cd rdm`
+3. Setup the meson project `meson setup . build --buildtype release`
+4. Build the project `meson compile -C build`
+5. The binary will be placed in `build/rdm`
+
 ## Basic Lua syntax
 RDM exposes a few Lua functions that can be found in the `rdmlib.lua` at the RDM data directory, these functions are used to communicate with RDM, letting your module know what you want to do.
 These functions are easy to use, but if you ever need examples, feel free to look at [my dotfiles](<https://github.com/Rikaisan/dotfiles>).
