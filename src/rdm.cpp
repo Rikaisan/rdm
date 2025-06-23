@@ -53,7 +53,25 @@ int main(int argc, char* argv[]) {
 
     std::string cmd = argv[1];
 
-    if (cmd == "preview") {
+    
+    if (cmd == "help") {
+        if (argc < 3) {
+            menus::printHelpHelp();
+        } else {
+            std::string page = argv[2];
+            if (page == "preview") {
+                menus::printPreviewHelp();
+            } else if (page == "apply" || page == "apply-soft") {
+                menus::printApplyHelp();
+            } else if (page == "init") {
+                menus::printInitHelp();
+            } else if (page == "dir") {
+                menus::printDirHelp();
+            } else {
+                menus::printHelpHelp();
+            }
+        }
+    } else if (cmd == "preview") {
         if (argc < 3) {
             LOG_ERR("Not enough arguments supplied");
             menus::printPreviewHelp();
