@@ -337,6 +337,7 @@ int main(int argc, char* argv[]) {
         }
     } else if (cmd == "init") {
         ensureDataDirExists(true);
+        LOG("Initialized rdm at " << RDM_DATA_DIR.c_str());
     } else if (cmd == "clone") {
         if (argc < 3) {
             menus::printCloneHelp();
