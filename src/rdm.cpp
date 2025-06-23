@@ -72,12 +72,6 @@ int main(int argc, char* argv[]) {
             }
         }
     } else if (cmd == "preview") {
-        if (argc < 3) {
-            LOG_ERR("Not enough arguments supplied");
-            menus::printPreviewHelp();
-            return EXIT_FAILURE;
-        }
-
         auto modulesAndFlags = parseModulesAndFlags(argv + 2, argc - 2);
 
         if (modulesAndFlags.modules.empty()) {
@@ -141,10 +135,16 @@ int main(int argc, char* argv[]) {
                         case FileDataType::Directory:
                         {
                             fs::path sourcePath = fileKV.second.getPath();
-                            LOG("Copy of directory " << sourcePath.c_str() << ":");
-                            for (auto& file : getDirectoryFilesRecursive(sourcePath)) {
-                                fs::path extraPath = file.lexically_relative(sourcePath);
+                            LOG_CUSTOM(moduleName, "Copy of directory " << sourcePath.c_str() << ":");
+                            auto files = getDirectoryFilesRecursive(sourcePath);
+                            size_t fileCount = files.size();
+                            size_t filesToPrint = fileCount >= 16 ? 16 : fileCount;
+                            for (size_t i{0}; i < filesToPrint; ++i) {
+                                fs::path extraPath = files.at(i).lexically_relative(sourcePath);
                                 LOG(" - " << (fileKV.first / extraPath).c_str());
+                            }
+                            if (fileCount > filesToPrint) {
+                                LOG(" + " << fileCount - filesToPrint << " more...");
                             }
                         }
                         break;
@@ -158,12 +158,6 @@ int main(int argc, char* argv[]) {
         }
         LOG_SEP();
     } else if (cmd == "apply" || cmd == "apply-soft") {
-        if (argc < 3) {
-            LOG_ERR("Not enough arguments supplied");
-            menus::printApplyHelp();
-            return EXIT_FAILURE;
-        }
-
         auto modulesAndFlags = parseModulesAndFlags(argv + 2, argc - 2);
 
         if (modulesAndFlags.modules.empty()) {
