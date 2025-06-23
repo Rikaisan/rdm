@@ -5,9 +5,10 @@ namespace rdm::menus {
         LOG("Usage: rdm <command> [args...]");
         LOG(" apply             Runs the scripts");
         LOG(" apply-soft        Runs the scripts but doesn't replace existing files");
+        LOG(" clone             Populates the rdm data directory with a git repository");
         LOG(" dir               Print RDM_DATA_DIR to stdout, useful to quickly cd with 'cd $(rdm dir)'");
         LOG(" help              Prints the help menu of a command");
-        LOG(" init              Initializes rdm with a git repository");
+        LOG(" init              Initializes the rdm data directory");
         LOG(" preview           Preview an apply command, displays files returned by modules and sets the 'preview' flag");
     }
     
@@ -30,13 +31,19 @@ namespace rdm::menus {
 
     void printHelpHelp() {
         LOG("Usage: rdm help <command>");
-        LOG("Valid commands: apply, apply-soft, dir, init, preview");
+        LOG("Valid commands: apply, apply-soft, clone, dir, init, preview");
     }
 
     void printInitHelp() {
-        LOG("Usage: rdm init [repo]");
-        LOG(" repo              A git repository to glone as the rdm home directory");
-        LOG("If no repository is specified, the base directory structure will be created");
+        LOG("Usage: rdm init");
+        LOG("Creates and populates the data directory with the rdm lua meta file");
+    }
+
+    void printCloneHelp() {
+        LOG("Usage: rdm clone <repo> [--replace]");
+        LOG(" repo              A git repository to clone as the rdm data directory");
+        LOG("Options:");
+        LOG(" --replace         Deletes the data directory if it exists before attempting to clone");
     }
 
     void printPreviewHelp() {

@@ -82,22 +82,26 @@ std::vector<fs::path> rdm::getDirectoryFilesRecursive(fs::path root) {
     return files;
 }
 
-void rdm::ensureDataDirExists() {
+void rdm::ensureDataDirExists(bool populate) {
     auto dataDir = getDataDir();
     if (!fs::exists(dataDir)) {
-        fs::create_directory(dataDir);
+        fs::create_directories(dataDir);
     }
-    
-    auto homeDataDir = getDataDir() / "home";
-    if (!fs::exists(homeDataDir)) {
-        fs::create_directory(homeDataDir);
+
+    if (populate) {
+        auto homeDataDir = getDataDir() / "home";
+        if (!fs::exists(homeDataDir)) {
+            fs::create_directories(homeDataDir);
+        }
+
+        copyRDMLib();
+
+        // Maybe have a dirtectory for system files?
+        // auto rootDataDir = getDataDir();
+        // if (!fs::exists(rootDataDir)) {
+        //     fs::create_directories(rootDataDir);
+        // }
     }
-    
-    // Maybe have a dirtectory for system files?
-    // auto rootDataDir = getDataDir();
-    // if (!fs::exists(rootDataDir)) {
-    //     fs::create_directory(rootDataDir);
-    // }
 }
 
 // TODO: Return true when it was able to copy it from the system location, false if it used the embedded one

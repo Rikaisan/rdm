@@ -2,6 +2,7 @@
 
 namespace rdm::menus {
     void printApplyHelp();
+    void printCloneHelp();
     void printDirHelp();
     void printHelpHelp();
     void printInitHelp();

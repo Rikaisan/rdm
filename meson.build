@@ -11,12 +11,13 @@ project('rdm', 'cpp',
 # add_global_arguments('-D_NLOG', language: 'cpp')
 
 lua_dep = subproject('lua').get_variable('lua_dep')
+git_dep = dependency('libgit2')
 
 subdir('src')
 
 exe = executable('rdm',
   sources,
-  dependencies: lua_dep,
+  dependencies: [lua_dep, git_dep],
   install : true)
 
 test('basic', exe)
