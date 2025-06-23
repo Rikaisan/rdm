@@ -68,8 +68,10 @@ namespace rdm {
             LOG_CUSTOM_INFO(name, "Executing '" << fileName << "'...");
             int exitCode = std::system(fileToExec.c_str());
             LOG_CUSTOM_INFO(name, "Finished executing '" << fileName << "', exit code: " << exitCode);
+            lua_pushnumber(L, exitCode);
         }
-        return 0;
+        lua_pushnil(L);
+        return 1;
     }
 
     int lapi_ForceSpawn(lua_State* L) {
@@ -84,13 +86,15 @@ namespace rdm {
             if (!isAllowedPath(Module::s_currentlyExecutingFile.parent_path(), fileToExec, true)) return 0;
 
             std::filesystem::permissions(fileToExec, std::filesystem::perms::owner_exec, std::filesystem::perm_options::add);
-            
+
             std::string name = Module::getNameFromPath(Module::s_currentlyExecutingFile);
             LOG_CUSTOM_INFO(name, "Executing '" << fileName << "'...");
             int exitCode = std::system(fileToExec.c_str());
             LOG_CUSTOM_INFO(name, "Finished executing '" << fileName << "', exit code: " << exitCode);
+            lua_pushnumber(L, exitCode);
         }
-        return 0;
+        lua_pushnil(L);
+        return 1;
     }
 
     int lapi_ModuleIsSet(lua_State* L) {

@@ -18,12 +18,14 @@ function FlagIsSet(flag) end
 --- @return boolean
 function ModuleIsSet(module) end
 
---- Run a script or binaary
+--- Run a script or binaary, returns the exit code
 --- @param filename string
+--- @return number|nil
 function Spawn(filename) end
 
---- Run a script or binary, add exec permission if not present
+--- Run a script or binary, add exec permission if not present, returns the exit code
 --- @param filename string
+--- @return number|nil
 function ForceSpawn(filename) end
 
 --- Describes that the file must be copied as is (in bytes), useful for non-text files
