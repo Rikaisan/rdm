@@ -4,6 +4,7 @@
 /home
 /subprojects/*
 !/subprojects/*.wrap
+*.code-workspace
 
 # Prerequisites
 *.d
