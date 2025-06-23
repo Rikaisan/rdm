@@ -1,4 +1,5 @@
 --- @meta
+--- version 1.0.0
 
 --- @alias FileDescriptor table Describes a file and how it should be parsed by rdm
 

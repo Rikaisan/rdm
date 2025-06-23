@@ -4,6 +4,7 @@
 #include <filesystem>
 #include "utils.hpp"
 #include "modules.hpp"
+#include "Logger.hpp"
 
 namespace fs = std::filesystem;
 
@@ -63,7 +64,10 @@ namespace rdm {
 
             if (!isAllowedPath(Module::s_currentlyExecutingFile.parent_path(), fileToExec, true)) return 0;
 
-            std::system(fileToExec.c_str());
+            std::string name = Module::getNameFromPath(Module::s_currentlyExecutingFile);
+            LOG_CUSTOM_INFO(name, "Executing '" << fileName << "'...");
+            int exitCode = std::system(fileToExec.c_str());
+            LOG_CUSTOM_INFO(name, "Finished executing '" << fileName << "', exit code: " << exitCode);
         }
         return 0;
     }
@@ -80,7 +84,11 @@ namespace rdm {
             if (!isAllowedPath(Module::s_currentlyExecutingFile.parent_path(), fileToExec, true)) return 0;
 
             std::filesystem::permissions(fileToExec, std::filesystem::perms::owner_exec, std::filesystem::perm_options::add);
-            std::system(fileToExec.c_str());
+            
+            std::string name = Module::getNameFromPath(Module::s_currentlyExecutingFile);
+            LOG_CUSTOM_INFO(name, "Executing '" << fileName << "'...");
+            int exitCode = std::system(fileToExec.c_str());
+            LOG_CUSTOM_INFO(name, "Finished executing '" << fileName << "', exit code: " << exitCode);
         }
         return 0;
     }
