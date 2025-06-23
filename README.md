@@ -111,7 +111,7 @@ function RDM_GetFiles()
     local zshrc = Read(".zshrc-base")
 
     -- Insert work specific ZSH code
-    if OptionIsSet("work") then
+    if FlagIsSet("work") then
         local work = Read(".zshrc-work")
         zshrc = zshrc:gsub("#~work", work)
     end
