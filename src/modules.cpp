@@ -75,6 +75,7 @@ namespace rdm {
     }
 
     FileContentMap Module::getGeneratedFiles() {
+        if (m_luaExitCode != LUA_OK) return FileContentMap();
         LOG_CUSTOM_DEBUG(m_name, "Started generating files");
         FileContentMap files;
         lua_State* L = m_state;
@@ -118,12 +119,18 @@ namespace rdm {
                                 LOG_CUSTOM_DEBUG(m_name, "Added file with type " << dataType);
                                 files.emplace(m_destinationRoot / key, std::move(data)); // FIXME: What if the same file is specified twice? (relative paths)
                             } else {
-                                LOG_CUSTOM_DEBUG(m_name, "Invalid or non-present 'path'");
+                                LOG_CUSTOM_ERR(m_name, "Invalid value for file " << key << ": Invalid or non-present path");
                             }
                             lua_pop(L, 1);
+                        } else {
+                            LOG_CUSTOM_ERR(m_name, "Invalid value for file " << key << ": Unknown type");
                         }
+                    } else {
+                        LOG_CUSTOM_ERR(m_name, "Invalid value for file " << key << ": Invalid or non-present type");
                     }
                     lua_pop(L, 1);
+                } else {
+                    LOG_CUSTOM_ERR(m_name, "Invalid value for file " << key << ": Not a FileDescriptor or a string");
                 }
             }
             lua_pop(L, 1);
@@ -168,6 +175,7 @@ namespace rdm {
     }
 
     bool Module::callLuaMethod(std::string name) {
+        if (m_luaExitCode != LUA_OK) return false;
         if (lua_getglobal(m_state, name.c_str()) == LUA_TFUNCTION) {
             m_luaExitCode = lua_pcall(m_state, 0, 0, 0);
             if (m_luaExitCode != LUA_OK) {
