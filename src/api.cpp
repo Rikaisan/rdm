@@ -62,15 +62,19 @@ namespace rdm {
             fs::path fileToExec(Module::s_currentlyExecutingFile.parent_path());
             fileToExec.append(fileName);
 
-            if (!isAllowedPath(Module::s_currentlyExecutingFile.parent_path(), fileToExec, true)) return 0;
-
             std::string name = Module::getNameFromPath(Module::s_currentlyExecutingFile);
+            if (!isAllowedPath(Module::s_currentlyExecutingFile.parent_path(), fileToExec, true)) {
+                LOG_CUSTOM_ERR(name, "File '" << fileName << "' is not allowed or doesn't exist.");
+                lua_pushnil(L);
+                return 1;
+            }
+
             LOG_CUSTOM_INFO(name, "Executing '" << fileName << "'...");
             int exitCode = std::system(fileToExec.c_str());
-            LOG_CUSTOM_INFO(name, "Finished executing '" << fileName << "', exit code: " << exitCode);
             lua_pushnumber(L, exitCode);
+        } else {
+            lua_pushnil(L);
         }
-        lua_pushnil(L);
         return 1;
     }
 
@@ -83,17 +87,21 @@ namespace rdm {
             fs::path fileToExec(Module::s_currentlyExecutingFile.parent_path());
             fileToExec.append(fileName);
 
-            if (!isAllowedPath(Module::s_currentlyExecutingFile.parent_path(), fileToExec, true)) return 0;
+            std::string name = Module::getNameFromPath(Module::s_currentlyExecutingFile);
+            if (!isAllowedPath(Module::s_currentlyExecutingFile.parent_path(), fileToExec, true)) {
+                LOG_CUSTOM_ERR(name, "File '" << fileName << "' is not allowed or doesn't exist.");
+                lua_pushnil(L);
+                return 1;
+            }
 
             std::filesystem::permissions(fileToExec, std::filesystem::perms::owner_exec, std::filesystem::perm_options::add);
 
-            std::string name = Module::getNameFromPath(Module::s_currentlyExecutingFile);
             LOG_CUSTOM_INFO(name, "Executing '" << fileName << "'...");
             int exitCode = std::system(fileToExec.c_str());
-            LOG_CUSTOM_INFO(name, "Finished executing '" << fileName << "', exit code: " << exitCode);
             lua_pushnumber(L, exitCode);
+        } else {
+            lua_pushnil(L);
         }
-        lua_pushnil(L);
         return 1;
     }
 
