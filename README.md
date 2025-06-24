@@ -7,17 +7,12 @@ It's a tool born from necessity, so I am sure I will not be the only one who wil
 ## Installation
 ### Arch (AUR)
 `yay -Sy rdm`
-
-## Basic CLI syntax
-`rdm apply [modules...] [-f <flags...>]`
-### Example
-`rdm apply hyprland wallpapers term -f laptop work es`
-
-This will apply the modules `hyprland`, `wallpapers` and `term` and let them know you passed the flags `laptop`, `work` and `es`, what you do with those is up to you!
-
-- Want different shortcuts if the flag `es` was specified since the keyboard layout is different? Go for it!
-- Want some files to not be copied over since the `work` flag was specified? You got it.
-- Want a different display configuration for laptops? No problem.
+### Building Manually
+1. Clone the repository `git clone https://github.com/Rikaisan/rdm`
+2. cd into it `cd rdm`
+3. Setup the meson project `meson setup . build --buildtype release`
+4. Build the project `meson compile -C build`
+5. The binary will be placed in `build/rdm`
 
 ## Quickstart
 ### New Users
@@ -34,16 +29,20 @@ function RDM_GetFiles() -- Copy configs for foo and bar
 end
 ```
 5. Preview your module(s) with `rdm preview`
-### To setup RDM in a new machine
+### To setup a new machine with rdm
 1. Initialize RDM with `rdm clone <repo_url>`
 2. Apply modules with `rdm apply [modules...] [-f <flags...>]`
 
-## Building
-1. Clone the repository `git clone https://github.com/Rikaisan/rdm`
-2. cd into it `cd rdm`
-3. Setup the meson project `meson setup . build --buildtype release`
-4. Build the project `meson compile -C build`
-5. The binary will be placed in `build/rdm`
+## Basic CLI syntax
+`rdm apply [modules...] [-f <flags...>]`
+### Example
+`rdm apply hyprland wallpapers term -f laptop work es`
+
+This will apply the modules `hyprland`, `wallpapers` and `term` and let them know you passed the flags `laptop`, `work` and `es`, what you do with those is up to you!
+
+- Want different shortcuts if the flag `es` was specified since the keyboard layout is different? Go for it!
+- Want some files to not be copied over since the `work` flag was specified? You got it.
+- Want a different display configuration for laptops? No problem.
 
 ## Basic Lua syntax
 RDM exposes a few Lua functions that can be found in the `rdmlib.lua` at the RDM data directory, these functions are used to communicate with RDM, letting your module know what you want to do.
