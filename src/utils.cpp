@@ -94,7 +94,7 @@ void rdm::ensureDataDirExists(bool populate) {
             fs::create_directories(homeDataDir);
         }
 
-        copyRDMLib();
+        if (!copyRDMLib()) LOG_ERR("Couldn't copy RDM lib, use the copy at /usr/share/rdm/rdmlib.lua as a fallback.");
 
         // Maybe have a dirtectory for system files?
         // auto rootDataDir = getDataDir();
@@ -104,17 +104,18 @@ void rdm::ensureDataDirExists(bool populate) {
     }
 }
 
-// TODO: Return true when it was able to copy it from the system location, false if it used the embedded one
 bool rdm::copyRDMLib() {
-    fs::path libPath = getDataDir() / "rdmlib.lua";
-    if (fs::exists(libPath))
-        fs::remove(libPath);
+    fs::path destinationLibPath = getDataDir() / "rdmlib.lua";
+    if (!fs::exists(destinationLibPath.parent_path())) return false; // Do not copy if data dir doesn't exist
+
+    if (fs::exists(destinationLibPath))
+        fs::remove(destinationLibPath);
     
-    std::ofstream libFile(libPath, std::fstream::binary | std::fstream::out);
+    std::ofstream libFile(destinationLibPath, std::fstream::binary | std::fstream::out);
     if (libFile.is_open()) {
         libFile.write(src_rdmlib_lua, src_rdmlib_lua_len);
         libFile.close();
     }
 
-    return false;
+    return true;
 }

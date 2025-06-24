@@ -44,6 +44,10 @@ ModulesAndFlags parseModulesAndFlags(char* argv[], int count) {
 }
 
 int main(int argc, char* argv[]) {
+    if(!copyRDMLib()) {
+        LOG_DEBUG("Couldn't copy RDM lib.");
+    }
+    
     if (argc == 1) {
         menus::printMainHelp();
         return EXIT_SUCCESS;
