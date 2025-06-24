@@ -4,6 +4,10 @@ A small cli program to manage files and configurations for people who use multip
 RDM doesn't provide any complex version control, diffing or patching, but instead offers a simple yet powerful way of managing your machine configurations.
 It's a tool born from necessity, so I am sure I will not be the only one who will find it useful, if you ever wanted to have a single repository with all your configurations and scripts and be able to easily apply them (and modify them depending on the distribution or system type), I'm sure you will understand where this program comes from!
 
+## Installation
+### Arch (AUR)
+`yay -Sy rdm`
+
 ## Basic CLI syntax
 `rdm apply [modules...] [-f <flags...>]`
 ### Example
