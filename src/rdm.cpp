@@ -231,7 +231,7 @@ int main(int argc, char* argv[]) {
                     
                     if (cmd == "apply-soft") {
                         if (fileKV.second.getDataType() != FileDataType::Directory && fs::exists(file)) {
-                            LOG_WARN("File " << file << " already present, skipping...");
+                            // LOG_WARN("File " << file << " already present, skipping...");
                         } else {
                             if (fileKV.second.getDataType() != FileDataType::Directory) LOG_INFO("Creating file " << file << "...");
                             switch (dataType) {
@@ -257,7 +257,7 @@ int main(int argc, char* argv[]) {
                                         fs::path sourceFile = sourcePath / extraPath;
 
                                         if (fs::exists(fs::symlink_status(destinationFile))) {
-                                            LOG_WARN("File " << destinationFile << " already present, skipping...");
+                                            // LOG_WARN("File " << destinationFile << " already present, skipping...");
                                             continue;
                                         }
                                         LOG_INFO("Creating file " << destinationFile << "...");
