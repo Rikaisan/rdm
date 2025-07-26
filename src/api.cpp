@@ -127,6 +127,22 @@ namespace rdm {
         return 1;
     }
 
+    int lapi_IsSet(lua_State* L) {
+        int argc = lua_gettop(L);
+        if (argc != 1 || !lua_isstring(L, -1)) {
+            lua_pushboolean(L, 0);
+        } else {
+            std::string item = lua_tostring(L, -1);
+            lua_pushboolean(L, ModuleManager::isFlagSet(item) || ModuleManager::shouldProcessModule(item));
+        }
+        return 1;
+    }
+
+    int lapi_IsPreview(lua_State* L) {
+        lua_pushboolean(L, ModuleManager::isFlagSet("preview"));
+        return 1;
+    }
+
     int createFileDescriptor(lua_State* L, std::string name) {
         if (lua_gettop(L) != 1) {
             lua_pushnil(L);
