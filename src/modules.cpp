@@ -76,6 +76,7 @@ namespace rdm {
 
     FileContentMap Module::getGeneratedFiles() {
         if (m_luaExitCode != LUA_OK) return FileContentMap();
+        s_currentlyExecutingFile = m_modulePath;
         LOG_CUSTOM_DEBUG(m_name, "Started generating files");
         FileContentMap files;
         lua_State* L = m_state;
@@ -171,6 +172,7 @@ namespace rdm {
     }
 
     bool Module::runDelayed() {
+        s_currentlyExecutingFile = m_modulePath;
         return callLuaMethod("RDM_Delayed");
     }
 
