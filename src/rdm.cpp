@@ -232,8 +232,9 @@ int main(int argc, char* argv[]) {
                     fs::create_directories(file.parent_path());
                     
                     if (cmd == "apply-soft") {
+                        int skippedFiles = 0;
                         if (fileKV.second.getDataType() != FileDataType::Directory && fs::exists(file)) {
-                            // LOG_WARN("File " << file << " already present, skipping...");
+                            skippedFiles++;
                         } else {
                             if (fileKV.second.getDataType() != FileDataType::Directory) LOG_INFO("Creating file " << file << "...");
                             switch (dataType) {
@@ -259,7 +260,7 @@ int main(int argc, char* argv[]) {
                                         fs::path sourceFile = sourcePath / extraPath;
 
                                         if (fs::exists(fs::symlink_status(destinationFile))) {
-                                            // LOG_WARN("File " << destinationFile << " already present, skipping...");
+                                            skippedFiles++;
                                             continue;
                                         }
                                         LOG_INFO("Creating file " << destinationFile << "...");
@@ -281,6 +282,7 @@ int main(int argc, char* argv[]) {
                                 break;
                             }
                         }
+                        LOG_INFO("Skipped " << skippedFiles << " files that were already present");
                     } else {
                         if (fileKV.second.getDataType() != FileDataType::Directory) {
                             if (fs::exists(file)) { 
