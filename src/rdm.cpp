@@ -123,6 +123,7 @@ int main(int argc, char* argv[]) {
                 if (generatedFiles.empty()) {
                     if (module.getExitCode() == LUA_OK) {
                         LOG_WARN("The module '" << module.getName() << "' was found but returned no files.");
+                        module.runDelayed();
                     } else {
                         LOG_ERR("The module '" << module.getName() << "' was found but had errors [" << module.getExitCode() << "]: " << module.getErrorString());
                     }
@@ -212,6 +213,7 @@ int main(int argc, char* argv[]) {
                 if (generatedFiles.empty()) {
                     if (module.getExitCode() == LUA_OK) {
                         LOG_DEBUG("The module '" << module.getName() << "' was found but returned no files.");
+                        module.runDelayed();
                     } else {
                         LOG_ERR("The module '" << module.getName() << "' was found but had errors [" << module.getExitCode() << "]: " << module.getErrorString());
                     }
