@@ -342,6 +342,9 @@ int main(int argc, char* argv[]) {
     } else if (cmd == "init") {
         ensureDataDirExists(true);
         LOG("Initialized rdm at " << RDM_DATA_DIR.c_str());
+        if (argc > 2) {
+            LOG_WARN("Detected an extra argument, if you meant to initialize from a repository, use 'rdm clone <url>' instead");
+        }
     } else if (cmd == "clone") {
         if (argc < 3) {
             menus::printCloneHelp();
