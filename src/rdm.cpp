@@ -160,6 +160,7 @@ int main(int argc, char* argv[]) {
                 }
 
                 int skippedFiles = 0;
+                int processedFiles = 0;
                 for (auto& fileKV : generatedFiles) {
                     const FileData& fileData = fileKV.second;
                     const FileDataType& dataType = fileData.getDataType();
@@ -204,6 +205,7 @@ int main(int argc, char* argv[]) {
                                 std::ofstream handle = std::ofstream(file);
                                 handle << fileData.getContent();
                                 handle.close();
+                                processedFiles++;
                             }
                             break;
                         case FileDataType::RawData:
@@ -211,6 +213,7 @@ int main(int argc, char* argv[]) {
                                 LOG("Raw Copy");
                             } else {
                                 fs::copy_file(fileData.getPath(), file);
+                                processedFiles++;
                             }
                             break;
                         case FileDataType::Directory:
@@ -257,6 +260,8 @@ int main(int argc, char* argv[]) {
                                     } else {
                                         fs::copy_file(sourceFile, destinationFile);
                                     }
+
+                                    processedFiles++;
                                 }
                             }
                             break;
@@ -265,10 +270,10 @@ int main(int argc, char* argv[]) {
                     }
                 }
 
-                LOG_CUSTOM_INFO(moduleName, "Processed " << generatedFiles.size() << " total files");
-                if (skippedFiles > 0) LOG_CUSTOM_INFO(moduleName, "Skipped " << skippedFiles << " files that were already present");
+                if (cmd != Command::PREVIEW) LOG_CUSTOM_INFO(moduleName, "Processed " << processedFiles << " total files");
+                if (cmd != Command::PREVIEW && skippedFiles > 0) LOG_CUSTOM_INFO(moduleName, "Skipped " << skippedFiles << " files that were already present");
                 module.runDelayed();
-                if (skippedFiles > 0) LOG_CUSTOM_INFO(moduleName, "Finished processing");
+                LOG_CUSTOM_INFO(moduleName, "Finished processing");
             }
         }
         if (cmd == Command::PREVIEW && processedModules > 0) LOG_SEP();
