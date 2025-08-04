@@ -13,6 +13,17 @@ using namespace rdm;
 
 const fs::path RDM_DATA_DIR = getDataDir();
 
+enum class Command {
+    UNKNOWN,
+    HELP,
+    PREVIEW,
+    APPLY,
+    APPLY_SOFT,
+    INIT,
+    CLONE,
+    DIR
+};
+
 ModulesAndFlags parseModulesAndFlags(char* argv[], int count) {
     ModulesAndFlags maf;
     if (count == 0) return maf;
@@ -53,10 +64,18 @@ int main(int argc, char* argv[]) {
         return EXIT_SUCCESS;
     }
 
-    std::string cmd = argv[1];
+    std::string raw_cmd = argv[1];
+    Command cmd = Command::UNKNOWN;
+    if (raw_cmd == "help") cmd = Command::HELP;
+    else if (raw_cmd == "preview") cmd = Command::PREVIEW;
+    else if (raw_cmd == "apply") cmd = Command::APPLY;
+    else if (raw_cmd == "apply-soft") cmd = Command::APPLY_SOFT;
+    else if (raw_cmd == "init") cmd = Command::INIT;
+    else if (raw_cmd == "clone") cmd = Command::CLONE;
+    else if (raw_cmd == "dir") cmd = Command::DIR;
 
     
-    if (cmd == "help") {
+    if (cmd == Command::HELP) {
         if (argc < 3) {
             menus::printHelpHelp();
         } else {
@@ -75,7 +94,7 @@ int main(int argc, char* argv[]) {
                 menus::printHelpHelp();
             }
         }
-    } else if (cmd == "preview" || cmd == "apply" || cmd == "apply-soft") {
+    } else if (cmd == Command::PREVIEW || cmd == Command::APPLY || cmd == Command::APPLY_SOFT) {
         if (!fs::exists(RDM_DATA_DIR) || fs::is_empty(RDM_DATA_DIR)) {
             LOG_ERR("RDM data dir is empty or doesn't exist, run either 'rdm init' or 'rdm clone' to initialize it before running this command");
             return EXIT_FAILURE;
@@ -106,7 +125,7 @@ int main(int argc, char* argv[]) {
         }
 
         // To let users choose to not run logic if previewing
-        if (cmd == "preview") modulesAndFlags.flags.insert("preview");
+        if (cmd == Command::PREVIEW) modulesAndFlags.flags.insert("preview");
 
         ModuleManager moduleManager = ModuleManager(RDM_DATA_DIR / "home", getUserHome(), modulesAndFlags);
 
@@ -120,7 +139,7 @@ int main(int argc, char* argv[]) {
             if (moduleManager.shouldProcessModule(module.getName())) {
                 FileContentMap generatedFiles = module.getGeneratedFiles();
 
-                if (cmd == "preview") LOG_SEP();
+                if (cmd == Command::PREVIEW) LOG_SEP();
                 if (generatedFiles.empty()) {
                     if (module.getExitCode() == LUA_OK) {
                         LOG_DEBUG("The module '" << module.getName() << "' was found but returned no files.");
@@ -137,7 +156,7 @@ int main(int argc, char* argv[]) {
                 for (auto& fileKV : generatedFiles) {
                     FileDataType dataType = fileKV.second.getDataType();
                     fs::path file = fileKV.first;
-                    if (cmd == "preview") {
+                    if (cmd == Command::PREVIEW) {
                         LOG_SEP();
                         LOG_CUSTOM(moduleName, file << ":");
                     }
@@ -146,12 +165,12 @@ int main(int argc, char* argv[]) {
                     LOG_DEBUG((dataType == FileDataType::Directory ? "Directory: " : "File: ") << file.stem());
                     LOG_DEBUG("Destination: " << file.parent_path());
                     
-                    if (cmd != "preview") {
+                    if (cmd != Command::PREVIEW) {
                         fs::create_directories(file.parent_path());
 
                         if (fileKV.second.getDataType() != FileDataType::Directory) {
                             if (fs::exists(file)) {
-                                if (cmd == "apply-soft") {
+                                if (cmd == Command::APPLY_SOFT) {
                                     skippedFiles++;
                                     continue;
                                 }
@@ -165,7 +184,7 @@ int main(int argc, char* argv[]) {
 
                     switch (dataType) {
                         case FileDataType::Text:
-                            if (cmd == "preview") {
+                            if (cmd == Command::PREVIEW) {
                                 LOG(fileKV.second.getContent());
                             } else {
                                 std::ofstream handle = std::ofstream(file);
@@ -174,14 +193,14 @@ int main(int argc, char* argv[]) {
                             }
                             break;
                         case FileDataType::RawData:
-                            if (cmd == "preview") {
+                            if (cmd == Command::PREVIEW) {
                                 LOG("Raw Copy");
                             } else {
                                 fs::copy_file(fileKV.second.getPath(), file);
                             }
                             break;
                         case FileDataType::Directory:
-                            if (cmd == "preview") {
+                            if (cmd == Command::PREVIEW) {
                                 fs::path sourcePath = fileKV.second.getPath();
                                 LOG_CUSTOM(moduleName, "Copy of directory " << sourcePath.c_str() << ":");
                                 auto files = getDirectoryFilesRecursive(sourcePath);
@@ -203,7 +222,7 @@ int main(int argc, char* argv[]) {
                                     fs::path sourceFile = sourcePath / extraPath;
 
                                     if (fs::exists(fs::symlink_status(destinationFile))) {
-                                        if (cmd == "apply-soft") {
+                                        if (cmd == Command::APPLY_SOFT) {
                                             skippedFiles++;
                                             continue;
                                         }
@@ -231,14 +250,14 @@ int main(int argc, char* argv[]) {
                 module.runDelayed();
             }
         }
-        if (cmd == "preview") LOG_SEP();
-    } else if (cmd == "init") {
+        if (cmd == Command::PREVIEW) LOG_SEP();
+    } else if (cmd == Command::INIT) {
         ensureDataDirExists(true);
         LOG("Initialized rdm at " << RDM_DATA_DIR.c_str());
         if (argc > 2) {
             LOG_WARN("Detected an extra argument, if you meant to initialize from a repository, use 'rdm clone <url>' instead");
         }
-    } else if (cmd == "clone") {
+    } else if (cmd == Command::CLONE) {
         if (argc < 3) {
             menus::printCloneHelp();
             return EXIT_FAILURE;
@@ -275,10 +294,10 @@ int main(int argc, char* argv[]) {
             LOG_INFO("Done!");
             git_libgit2_shutdown();
         }
-    } else if (cmd == "dir") {
+    } else if (cmd == Command::DIR) {
         LOG(RDM_DATA_DIR.c_str());
     } else {
-        LOG("Unrecognized command '" << cmd << "'");
+        LOG("Unrecognized command '" << raw_cmd << "'");
         menus::printMainHelp();
         return EXIT_FAILURE;
     }
