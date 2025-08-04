@@ -50,6 +50,7 @@ namespace rdm {
         Module(Module& other) = delete;
         Module& operator=(const Module&) = delete;
         FileContentMap getGeneratedFiles();
+        std::vector<std::string> getExtraModules();
         bool runDelayed();
         std::string getPath() const;
         int getExitCode() const;

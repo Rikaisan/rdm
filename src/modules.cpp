@@ -173,6 +173,41 @@ namespace rdm {
         return path.stem().string().substr(ModuleManager::MODULE_PREFIX.length());
     }
 
+    std::vector<std::string> Module::getExtraModules() {
+        std::vector<std::string> extraModules;
+         if (m_luaExitCode != LUA_OK) return extraModules;
+        s_currentlyExecutingFile = m_modulePath;
+        lua_State* L = m_state;
+
+        LOG_CUSTOM_DEBUG(m_name, "Started fetching extra modules");
+
+        if (lua_getglobal(L, "RDM_AddModules") != LUA_TFUNCTION) {
+            lua_pop(L, 1);
+            return extraModules;
+        }
+
+        m_luaExitCode = lua_pcall(L, 0, 1, 0);
+        if (m_luaExitCode != LUA_OK) {
+            m_luaErrorString = lua_tostring(m_state, -1);
+            return extraModules;
+        }
+
+        if (!lua_istable(L, -1)) return extraModules;
+
+        lua_pushnil(L);
+        while (lua_next(L, -2)) {
+            if (lua_isstring(L, -1)) {
+                std::string moduleName = lua_tostring(L, -1);
+                LOG_CUSTOM_DEBUG(m_name, "Requested module: " << moduleName);
+                extraModules.push_back(moduleName);
+            }
+            lua_pop(L, 1);
+        }
+
+        LOG_CUSTOM_DEBUG(m_name, "Finished getting extra modules, requested " << extraModules.size() << " extra modules");
+        return extraModules;
+    }
+
     bool Module::runDelayed() {
         s_currentlyExecutingFile = m_modulePath;
         return callLuaMethod("RDM_Delayed");
