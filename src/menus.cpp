@@ -16,11 +16,12 @@ namespace rdm::menus {
         LOG("Usage: rdm apply|apply-soft [modules...] [options...]");
         LOG(" module            The name of the module to apply (e.g. rdm-hyprland.lua -> hyprland), leave empty for all modules");
         LOG("Options:");
+        LOG(" -v,--verbose      Print more information about what RDM is doing");
         LOG(" -f,--flags        A space separated list of flags that should be passed to the modules");
         LOG("Examples:");
         LOG(" rdm apply                                       -> Applies all modules without any flags set");
         LOG(" rdm apply -f es setup                           -> Applies all modules with the flags 'es' and 'setup' set");
-        LOG(" rdm apply hyprland wallpapers -f laptop nassets -> Applies the hyprland and wallpapers modules with the flags 'laptop' and 'nassets' set");
+        LOG(" rdm apply hyprland wallpapers -v -f laptop arch -> Applies the hyprland and wallpapers modules with the flags 'laptop' and 'arch' set and enables verbose mode");
         LOG(" rdm soft-apply wallpapers                       -> Applies the wallpapers module without replacing any existing files");
     }
 

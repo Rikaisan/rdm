@@ -37,6 +37,7 @@ namespace rdm {
     struct ModulesAndFlags {
         std::unordered_set<std::string> modules;
         std::unordered_set<std::string> flags;
+        std::unordered_set<std::string> program_flags;
     };
 
     class Module;

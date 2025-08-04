@@ -40,6 +40,7 @@ ModulesAndFlags parseModulesAndFlags(char* argv[], int count) {
         auto& arg = args.at(currentArg++);
         if (arg.starts_with("-")) {
             if (arg == "-f" || arg == "--flags") break;
+            maf.program_flags.insert(arg);
             continue;
         }
         maf.modules.insert(arg);
@@ -47,7 +48,10 @@ ModulesAndFlags parseModulesAndFlags(char* argv[], int count) {
 
     while (currentArg < count) {
         auto& arg = args.at(currentArg++);
-        if (arg.starts_with("-")) continue;
+        if (arg.starts_with("-")) {
+            maf.program_flags.insert(arg);
+            continue;
+        }
         maf.flags.insert(arg);
     }
 
@@ -137,7 +141,7 @@ int main(int argc, char* argv[]) {
 
         int processedModules = 0;
         for (auto& [moduleName, module]: moduleManager.getModules()) {
-            if (moduleManager.shouldProcessModule(module.getName())) {
+            if (moduleManager.shouldProcessModule(moduleName)) {
                 FileContentMap generatedFiles = module.getGeneratedFiles();
                 processedModules++;
 
@@ -145,42 +149,48 @@ int main(int argc, char* argv[]) {
 
                 if (generatedFiles.empty()) {
                     if (module.getExitCode() == LUA_OK) {
-                        LOG_DEBUG("The module '" << module.getName() << "' was found but returned no files.");
+                        LOG_CUSTOM_DEBUG(moduleName, "The module '" << moduleName << "' was found but returned no files.");
                         module.runDelayed();
                     } else {
-                        LOG_ERR("The module '" << module.getName() << "' was found but had errors [" << module.getExitCode() << "]: " << module.getErrorString());
+                        LOG_CUSTOM_ERR(moduleName, "The module '" << moduleName << "' was found but had errors [" << module.getExitCode() << "]: " << module.getErrorString());
                     }
                     continue;
                 } else {
-                    LOG_INFO("Processing module: " << moduleName);
+                    LOG_CUSTOM_INFO(moduleName, "Started processing module");
                 }
 
                 int skippedFiles = 0;
                 for (auto& fileKV : generatedFiles) {
-                    FileDataType dataType = fileKV.second.getDataType();
-                    fs::path file = fileKV.first;
+                    const FileDataType dataType = fileKV.second.getDataType();
+                    const fs::path file = fileKV.first;
                     if (cmd == Command::PREVIEW) {
                         LOG_SEP();
                         LOG_CUSTOM(moduleName, file << ":");
                     }
 
-                    LOG_DEBUG("Processing: " << file);
-                    LOG_DEBUG((dataType == FileDataType::Directory ? "Directory: " : "File: ") << file.stem());
-                    LOG_DEBUG("Destination: " << file.parent_path());
+                    LOG_CUSTOM_DEBUG(moduleName, "Processing: " << file);
+                    LOG_CUSTOM_DEBUG(moduleName, (dataType == FileDataType::Directory ? "Directory: " : "File: ") << file.stem());
+                    LOG_CUSTOM_DEBUG(moduleName, "Destination: " << file.parent_path());
                     
                     if (cmd != Command::PREVIEW) {
                         fs::create_directories(file.parent_path());
 
-                        if (fileKV.second.getDataType() != FileDataType::Directory) {
+                        if (dataType != FileDataType::Directory) {
                             if (fs::exists(file)) {
                                 if (cmd == Command::APPLY_SOFT) {
                                     skippedFiles++;
+                                    if (isFlagPresent(Flag::VERBOSE, modulesAndFlags.program_flags))
+                                        LOG_CUSTOM_INFO(moduleName, "Skipping " << file);
                                     continue;
                                 }
-                                LOG_WARN("Replacing " << file << "...");
+
+                                if (isFlagPresent(Flag::VERBOSE, modulesAndFlags.program_flags))
+                                    LOG_CUSTOM_WARN(moduleName, "Replacing " << file);
+
                                 fs::remove(file);
                             } else {
-                                LOG_INFO("Creating " << file << "...");
+                                if (isFlagPresent(Flag::VERBOSE, modulesAndFlags.program_flags))
+                                    LOG_CUSTOM_INFO(moduleName, "Creating " << file);
                             }
                         }
                     }
@@ -211,7 +221,7 @@ int main(int argc, char* argv[]) {
                                 size_t filesToPrint = fileCount >= 16 ? 16 : fileCount;
                                 for (size_t i{0}; i < filesToPrint; ++i) {
                                     fs::path extraPath = files.at(i).lexically_relative(sourcePath);
-                                    LOG(" - " << (fileKV.first / extraPath).c_str());
+                                    LOG(" - " << (file / extraPath).c_str());
                                 }
                                 if (fileCount > filesToPrint) {
                                     LOG(" + " << fileCount - filesToPrint << " more...");
@@ -227,12 +237,16 @@ int main(int argc, char* argv[]) {
                                     if (fs::exists(fs::symlink_status(destinationFile))) {
                                         if (cmd == Command::APPLY_SOFT) {
                                             skippedFiles++;
+                                            if (isFlagPresent(Flag::VERBOSE, modulesAndFlags.program_flags))
+                                                LOG_CUSTOM_INFO(moduleName, "Skipping " << file);
                                             continue;
                                         }
-                                        LOG_WARN("Replacing " << destinationFile << "...");
+                                        if (isFlagPresent(Flag::VERBOSE, modulesAndFlags.program_flags))
+                                            LOG_CUSTOM_WARN(moduleName, "Replacing " << destinationFile);
                                         fs::remove(destinationFile);
                                     } else {
-                                        LOG_INFO("Creating " << destinationFile << "...");
+                                        if (isFlagPresent(Flag::VERBOSE, modulesAndFlags.program_flags))
+                                            LOG_CUSTOM_INFO(moduleName, "Creating " << destinationFile);
                                     }
 
                                     fs::create_directories(destinationFile.parent_path());
@@ -246,11 +260,12 @@ int main(int argc, char* argv[]) {
                             }
                             break;
                         default:
-                           LOG_ERR("Received a file with an invalid data type: " << fileKV.first);
+                           LOG_CUSTOM_ERR(moduleName, "Received a file with an invalid data type: " << file);
                     }
                 }
-                if (skippedFiles > 0) LOG_INFO("Skipped " << skippedFiles << " files that were already present");
+                if (skippedFiles > 0) LOG_CUSTOM_INFO(moduleName, "Skipped " << skippedFiles << " files that were already present");
                 module.runDelayed();
+                if (skippedFiles > 0) LOG_CUSTOM_INFO(moduleName, "Finished processing module");
             }
         }
         if (cmd == Command::PREVIEW && processedModules > 0) LOG_SEP();

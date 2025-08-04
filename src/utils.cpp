@@ -119,3 +119,12 @@ bool rdm::copyRDMLib() {
 
     return true;
 }
+
+bool rdm::isFlagPresent(Flag flag, std::unordered_set<std::string> flags) {
+    switch (flag) {
+        case Flag::VERBOSE:
+            return flags.contains("-v") || flags.contains("--verbose");
+        default:
+            return false;
+    }
+}
