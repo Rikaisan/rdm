@@ -22,9 +22,9 @@ namespace rdm {
         FileData(fs::path path, FileDataType dataType);
         FileData(FileData&& other);
         FileData(FileData& other) = delete;
-        std::string getContent();
-        fs::path getPath();
-        FileDataType getDataType();
+        std::string getContent() const;
+        fs::path getPath() const;
+        FileDataType getDataType() const;
 
         private:
         std::variant<std::string, fs::path> m_content, m_filePath;

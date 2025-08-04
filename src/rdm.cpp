@@ -156,12 +156,13 @@ int main(int argc, char* argv[]) {
                     }
                     continue;
                 } else {
-                    LOG_CUSTOM_INFO(moduleName, "Started processing module");
+                    LOG_CUSTOM_INFO(moduleName, "Started processing");
                 }
 
                 int skippedFiles = 0;
                 for (auto& fileKV : generatedFiles) {
-                    const FileDataType dataType = fileKV.second.getDataType();
+                    const FileData& fileData = fileKV.second;
+                    const FileDataType& dataType = fileData.getDataType();
                     const fs::path file = fileKV.first;
                     if (cmd == Command::PREVIEW) {
                         LOG_SEP();
@@ -198,10 +199,10 @@ int main(int argc, char* argv[]) {
                     switch (dataType) {
                         case FileDataType::Text:
                             if (cmd == Command::PREVIEW) {
-                                LOG(fileKV.second.getContent());
+                                LOG(fileData.getContent());
                             } else {
                                 std::ofstream handle = std::ofstream(file);
-                                handle << fileKV.second.getContent();
+                                handle << fileData.getContent();
                                 handle.close();
                             }
                             break;
@@ -209,12 +210,12 @@ int main(int argc, char* argv[]) {
                             if (cmd == Command::PREVIEW) {
                                 LOG("Raw Copy");
                             } else {
-                                fs::copy_file(fileKV.second.getPath(), file);
+                                fs::copy_file(fileData.getPath(), file);
                             }
                             break;
                         case FileDataType::Directory:
                             if (cmd == Command::PREVIEW) {
-                                fs::path sourcePath = fileKV.second.getPath();
+                                fs::path sourcePath = fileData.getPath();
                                 LOG_CUSTOM(moduleName, "Copy of directory " << sourcePath.c_str() << ":");
                                 auto files = getDirectoryFilesRecursive(sourcePath);
                                 size_t fileCount = files.size();
@@ -227,7 +228,7 @@ int main(int argc, char* argv[]) {
                                     LOG(" + " << fileCount - filesToPrint << " more...");
                                 }
                             } else {
-                                fs::path sourcePath = fileKV.second.getPath();
+                                fs::path sourcePath = fileData.getPath();
                                 fs::path destinationPath = file;
                                 for (auto& file : getDirectoryFilesRecursive(sourcePath)) {
                                     fs::path extraPath = file.lexically_relative(sourcePath);
@@ -238,7 +239,7 @@ int main(int argc, char* argv[]) {
                                         if (cmd == Command::APPLY_SOFT) {
                                             skippedFiles++;
                                             if (isFlagPresent(Flag::VERBOSE, modulesAndFlags.program_flags))
-                                                LOG_CUSTOM_INFO(moduleName, "Skipping " << file);
+                                                LOG_CUSTOM_INFO(moduleName, "Skipping " << destinationFile);
                                             continue;
                                         }
                                         if (isFlagPresent(Flag::VERBOSE, modulesAndFlags.program_flags))
@@ -263,9 +264,11 @@ int main(int argc, char* argv[]) {
                            LOG_CUSTOM_ERR(moduleName, "Received a file with an invalid data type: " << file);
                     }
                 }
+
+                LOG_CUSTOM_INFO(moduleName, "Processed " << generatedFiles.size() << " total files");
                 if (skippedFiles > 0) LOG_CUSTOM_INFO(moduleName, "Skipped " << skippedFiles << " files that were already present");
                 module.runDelayed();
-                if (skippedFiles > 0) LOG_CUSTOM_INFO(moduleName, "Finished processing module");
+                if (skippedFiles > 0) LOG_CUSTOM_INFO(moduleName, "Finished processing");
             }
         }
         if (cmd == Command::PREVIEW && processedModules > 0) LOG_SEP();

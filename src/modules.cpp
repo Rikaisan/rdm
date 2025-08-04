@@ -35,15 +35,15 @@ namespace rdm {
         }
     }
 
-    std::string FileData::getContent() {
+    std::string FileData::getContent() const {
     return m_dataType == FileDataType::Text ? std::get<std::string>(m_content) : std::string();
     }
 
-    fs::path FileData::getPath() {
+    fs::path FileData::getPath() const {
         return m_dataType != FileDataType::Text ? std::get<fs::path>(m_filePath) : fs::path();
     }
 
-    FileDataType FileData::getDataType() {
+    FileDataType FileData::getDataType() const {
         return m_dataType;
     }
 
