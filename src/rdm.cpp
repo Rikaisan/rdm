@@ -218,6 +218,8 @@ int main(int argc, char* argv[]) {
                         LOG_ERR("The module '" << module.getName() << "' was found but had errors [" << module.getExitCode() << "]: " << module.getErrorString());
                     }
                     continue;
+                } else {
+                    LOG_INFO("Processing module: " << moduleName);
                 }
 
                 // Do something with the module files
@@ -282,7 +284,8 @@ int main(int argc, char* argv[]) {
                                 break;
                             }
                         }
-                        LOG_INFO("Skipped " << skippedFiles << " files that were already present");
+                        if (skippedFiles > 0)
+                            LOG_INFO("Skipped " << skippedFiles << " files that were already present");
                     } else {
                         if (fileKV.second.getDataType() != FileDataType::Directory) {
                             if (fs::exists(file)) { 
