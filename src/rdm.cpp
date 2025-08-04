@@ -135,11 +135,14 @@ int main(int argc, char* argv[]) {
             }
         }
 
+        int processedModules = 0;
         for (auto& [moduleName, module]: moduleManager.getModules()) {
             if (moduleManager.shouldProcessModule(module.getName())) {
                 FileContentMap generatedFiles = module.getGeneratedFiles();
+                processedModules++;
 
                 if (cmd == Command::PREVIEW) LOG_SEP();
+
                 if (generatedFiles.empty()) {
                     if (module.getExitCode() == LUA_OK) {
                         LOG_DEBUG("The module '" << module.getName() << "' was found but returned no files.");
@@ -250,7 +253,7 @@ int main(int argc, char* argv[]) {
                 module.runDelayed();
             }
         }
-        if (cmd == Command::PREVIEW) LOG_SEP();
+        if (cmd == Command::PREVIEW && processedModules > 0) LOG_SEP();
     } else if (cmd == Command::INIT) {
         ensureDataDirExists(true);
         LOG("Initialized rdm at " << RDM_DATA_DIR.c_str());
