@@ -75,11 +75,12 @@ int main(int argc, char* argv[]) {
                 menus::printHelpHelp();
             }
         }
-    } else if (cmd == "preview") {
+    } else if (cmd == "preview" || cmd == "apply" || cmd == "apply-soft") {
         if (!fs::exists(RDM_DATA_DIR) || fs::is_empty(RDM_DATA_DIR)) {
             LOG_ERR("RDM data dir is empty or doesn't exist, run either 'rdm init' or 'rdm clone' to initialize it before running this command");
             return EXIT_FAILURE;
         }
+
         auto modulesAndFlags = parseModulesAndFlags(argv + 2, argc - 2);
 
         if (modulesAndFlags.modules.empty()) {
@@ -105,7 +106,7 @@ int main(int argc, char* argv[]) {
         }
 
         // To let users choose to not run logic if previewing
-        modulesAndFlags.flags.insert("preview");
+        if (cmd == "preview") modulesAndFlags.flags.insert("preview");
 
         ModuleManager moduleManager = ModuleManager(RDM_DATA_DIR / "home", getUserHome(), modulesAndFlags);
 
@@ -119,97 +120,7 @@ int main(int argc, char* argv[]) {
             if (moduleManager.shouldProcessModule(module.getName())) {
                 FileContentMap generatedFiles = module.getGeneratedFiles();
 
-                LOG_SEP();
-                if (generatedFiles.empty()) {
-                    if (module.getExitCode() == LUA_OK) {
-                        LOG_WARN("The module '" << module.getName() << "' was found but returned no files.");
-                        module.runDelayed();
-                    } else {
-                        LOG_ERR("The module '" << module.getName() << "' was found but had errors [" << module.getExitCode() << "]: " << module.getErrorString());
-                    }
-                    continue;
-                }
-
-                LOG_INFO("Module: " << moduleName);
-                for (auto& fileKV : generatedFiles) {
-                    LOG_SEP();
-                    LOG_CUSTOM(moduleName, fileKV.first << ":");
-                    switch (fileKV.second.getDataType()) {
-                        case FileDataType::Text:
-                        LOG(fileKV.second.getContent());
-                        break;
-                        case FileDataType::RawData:
-                        LOG("Raw Copy");
-                        break;
-                        case FileDataType::Directory:
-                        {
-                            fs::path sourcePath = fileKV.second.getPath();
-                            LOG_CUSTOM(moduleName, "Copy of directory " << sourcePath.c_str() << ":");
-                            auto files = getDirectoryFilesRecursive(sourcePath);
-                            size_t fileCount = files.size();
-                            size_t filesToPrint = fileCount >= 16 ? 16 : fileCount;
-                            for (size_t i{0}; i < filesToPrint; ++i) {
-                                fs::path extraPath = files.at(i).lexically_relative(sourcePath);
-                                LOG(" - " << (fileKV.first / extraPath).c_str());
-                            }
-                            if (fileCount > filesToPrint) {
-                                LOG(" + " << fileCount - filesToPrint << " more...");
-                            }
-                        }
-                        break;
-                        default:
-                        LOG_ERR("Received a file with an invalid data type: " << fileKV.first);
-                        break;
-                    }
-                }
-                module.runDelayed();
-            }
-        }
-        LOG_SEP();
-    } else if (cmd == "apply" || cmd == "apply-soft") {
-        if (!fs::exists(RDM_DATA_DIR) || fs::is_empty(RDM_DATA_DIR)) {
-            LOG_ERR("RDM data dir is empty or doesn't exist, run either 'rdm init' or 'rdm clone' to initialize it before running this command");
-            return EXIT_FAILURE;
-        }
-
-        auto modulesAndFlags = parseModulesAndFlags(argv + 2, argc - 2);
-
-        if (modulesAndFlags.modules.empty()) {
-            LOG_INFO("No modules specified, defaulting to all modules");
-        } else {
-            #ifdef _DEBUG
-            LOG_DEBUG("Parsed modules:");
-            for (auto& module : modulesAndFlags.modules) {
-                LOG(module);
-            }
-            #endif
-        }
-
-        if (modulesAndFlags.flags.empty()) {
-            LOG_DEBUG("No flags specified");
-        } else {
-            #ifdef _DEBUG
-            LOG_DEBUG("Parsed flags:");
-            for (auto& flag : modulesAndFlags.flags) {
-                LOG(flag);
-            }
-            #endif
-        }
-
-
-        ModuleManager moduleManager = ModuleManager(RDM_DATA_DIR / "home", getUserHome(), modulesAndFlags);
-
-        // Log that some modules were passed by the user that do not exist
-        for (auto& moduleName : modulesAndFlags.modules) {
-            if (!moduleManager.getModules().contains(moduleName)) {
-                LOG_ERR("Couldn't find the module '" << moduleName << "', skipping...");
-            }
-        }
-
-        for (auto& [moduleName, module]: moduleManager.getModules()) {
-            if (moduleManager.shouldProcessModule(module.getName())) {
-                FileContentMap generatedFiles = module.getGeneratedFiles();
-
+                if (cmd == "preview") LOG_SEP();
                 if (generatedFiles.empty()) {
                     if (module.getExitCode() == LUA_OK) {
                         LOG_DEBUG("The module '" << module.getName() << "' was found but returned no files.");
@@ -222,85 +133,105 @@ int main(int argc, char* argv[]) {
                     LOG_INFO("Processing module: " << moduleName);
                 }
 
-                // Do something with the module files
                 int skippedFiles = 0;
                 for (auto& fileKV : generatedFiles) {
                     FileDataType dataType = fileKV.second.getDataType();
                     fs::path file = fileKV.first;
-                    
-                    LOG_DEBUG("Processing: " << file);
-                    LOG_DEBUG((fileKV.second.getDataType() == FileDataType::Directory ? "Directory: " : "File: ") << file.stem());
-                    LOG_DEBUG("Destination: " << file.parent_path());
+                    if (cmd == "preview") {
+                        LOG_SEP();
+                        LOG_CUSTOM(moduleName, file << ":");
+                    }
 
-                    fs::create_directories(file.parent_path());
+                    LOG_DEBUG("Processing: " << file);
+                    LOG_DEBUG((dataType == FileDataType::Directory ? "Directory: " : "File: ") << file.stem());
+                    LOG_DEBUG("Destination: " << file.parent_path());
                     
-                    if (fileKV.second.getDataType() != FileDataType::Directory) {
-                        if (fs::exists(file)) {
-                            if (cmd == "apply-soft") {
-                                skippedFiles++;
-                                continue;
+                    if (cmd != "preview") {
+                        fs::create_directories(file.parent_path());
+
+                        if (fileKV.second.getDataType() != FileDataType::Directory) {
+                            if (fs::exists(file)) {
+                                if (cmd == "apply-soft") {
+                                    skippedFiles++;
+                                    continue;
+                                }
+                                LOG_WARN("Replacing " << file << "...");
+                                fs::remove(file);
+                            } else {
+                                LOG_INFO("Creating " << file << "...");
                             }
-                            LOG_WARN("Replacing " << file << "...");
-                            fs::remove(file);
-                        } else {
-                            LOG_INFO("Creating " << file << "...");
                         }
                     }
-                    
+
                     switch (dataType) {
                         case FileDataType::Text:
-                        {
-                            std::ofstream handle = std::ofstream(file);
-                            handle << fileKV.second.getContent();
-                            handle.close();
+                            if (cmd == "preview") {
+                                LOG(fileKV.second.getContent());
+                            } else {
+                                std::ofstream handle = std::ofstream(file);
+                                handle << fileKV.second.getContent();
+                                handle.close();
+                            }
                             break;
-                        }
                         case FileDataType::RawData:
-                        {
-                            fs::copy_file(fileKV.second.getPath(), file);
+                            if (cmd == "preview") {
+                                LOG("Raw Copy");
+                            } else {
+                                fs::copy_file(fileKV.second.getPath(), file);
+                            }
                             break;
-                        }
                         case FileDataType::Directory:
-                        {
-                            fs::path sourcePath = fileKV.second.getPath();
-                            fs::path destinationPath = file;
-                            for (auto& file : getDirectoryFilesRecursive(sourcePath)) {
-                                fs::path extraPath = file.lexically_relative(sourcePath);
-                                fs::path destinationFile = destinationPath / extraPath;
-                                fs::path sourceFile = sourcePath / extraPath;
-
-                                if (fs::exists(fs::symlink_status(destinationFile))) {
-                                    if (cmd == "apply-soft") {
-                                        skippedFiles++;
-                                        continue;
-                                    }
-                                    LOG_WARN("Replacing " << destinationFile << "...");
-                                    fs::remove(destinationFile);
-                                } else {
-                                    LOG_INFO("Creating " << destinationFile << "...");
+                            if (cmd == "preview") {
+                                fs::path sourcePath = fileKV.second.getPath();
+                                LOG_CUSTOM(moduleName, "Copy of directory " << sourcePath.c_str() << ":");
+                                auto files = getDirectoryFilesRecursive(sourcePath);
+                                size_t fileCount = files.size();
+                                size_t filesToPrint = fileCount >= 16 ? 16 : fileCount;
+                                for (size_t i{0}; i < filesToPrint; ++i) {
+                                    fs::path extraPath = files.at(i).lexically_relative(sourcePath);
+                                    LOG(" - " << (fileKV.first / extraPath).c_str());
                                 }
+                                if (fileCount > filesToPrint) {
+                                    LOG(" + " << fileCount - filesToPrint << " more...");
+                                }
+                            } else {
+                                fs::path sourcePath = fileKV.second.getPath();
+                                fs::path destinationPath = file;
+                                for (auto& file : getDirectoryFilesRecursive(sourcePath)) {
+                                    fs::path extraPath = file.lexically_relative(sourcePath);
+                                    fs::path destinationFile = destinationPath / extraPath;
+                                    fs::path sourceFile = sourcePath / extraPath;
 
-                                fs::create_directories(destinationFile.parent_path());
+                                    if (fs::exists(fs::symlink_status(destinationFile))) {
+                                        if (cmd == "apply-soft") {
+                                            skippedFiles++;
+                                            continue;
+                                        }
+                                        LOG_WARN("Replacing " << destinationFile << "...");
+                                        fs::remove(destinationFile);
+                                    } else {
+                                        LOG_INFO("Creating " << destinationFile << "...");
+                                    }
 
-                                if (fs::is_symlink(sourceFile)) {
-                                    fs::copy_symlink(sourceFile, destinationFile);
-                                } else {
-                                    fs::copy_file(sourceFile, destinationFile);
+                                    fs::create_directories(destinationFile.parent_path());
+
+                                    if (fs::is_symlink(sourceFile)) {
+                                        fs::copy_symlink(sourceFile, destinationFile);
+                                    } else {
+                                        fs::copy_file(sourceFile, destinationFile);
+                                    }
                                 }
                             }
                             break;
-                        }
                         default:
-                        {
-                            LOG_ERR("Received a file with an invalid data type: " << file);
-                            break;
-                        }
+                           LOG_ERR("Received a file with an invalid data type: " << fileKV.first);
                     }
                 }
                 if (skippedFiles > 0) LOG_INFO("Skipped " << skippedFiles << " files that were already present");
                 module.runDelayed();
             }
         }
+        if (cmd == "preview") LOG_SEP();
     } else if (cmd == "init") {
         ensureDataDirExists(true);
         LOG("Initialized rdm at " << RDM_DATA_DIR.c_str());
