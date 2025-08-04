@@ -223,6 +223,7 @@ int main(int argc, char* argv[]) {
                 }
 
                 // Do something with the module files
+                int skippedFiles = 0;
                 for (auto& fileKV : generatedFiles) {
                     FileDataType dataType = fileKV.second.getDataType();
                     fs::path file = fileKV.first;
@@ -233,116 +234,70 @@ int main(int argc, char* argv[]) {
 
                     fs::create_directories(file.parent_path());
                     
-                    if (cmd == "apply-soft") {
-                        int skippedFiles = 0;
-                        if (fileKV.second.getDataType() != FileDataType::Directory && fs::exists(file)) {
-                            skippedFiles++;
+                    if (fileKV.second.getDataType() != FileDataType::Directory) {
+                        if (fs::exists(file)) {
+                            if (cmd == "apply-soft") {
+                                skippedFiles++;
+                                continue;
+                            }
+                            LOG_WARN("Replacing " << file << "...");
+                            fs::remove(file);
                         } else {
-                            if (fileKV.second.getDataType() != FileDataType::Directory) LOG_INFO("Creating file " << file << "...");
-                            switch (dataType) {
-                                case FileDataType::Text:
-                                {
-                                    std::ofstream handle = std::ofstream(file);
-                                    handle << fileKV.second.getContent();
-                                    handle.close();
-                                }
-                                break;
-                                case FileDataType::RawData:
-                                {
-                                    fs::copy_file(fileKV.second.getPath(), file);
-                                }
-                                break;
-                                case FileDataType::Directory:
-                                {
-                                    fs::path sourcePath = fileKV.second.getPath();
-                                    fs::path destinationPath = file;
-                                    for (auto& file : getDirectoryFilesRecursive(sourcePath)) {
-                                        fs::path extraPath = file.lexically_relative(sourcePath);
-                                        fs::path destinationFile = destinationPath / extraPath;
-                                        fs::path sourceFile = sourcePath / extraPath;
-
-                                        if (fs::exists(fs::symlink_status(destinationFile))) {
-                                            skippedFiles++;
-                                            continue;
-                                        }
-                                        LOG_INFO("Creating file " << destinationFile << "...");
-
-                                        fs::create_directories(destinationFile.parent_path());
-
-                                        if (fs::is_symlink(sourceFile)) {
-                                            fs::copy_symlink(sourceFile, destinationFile);
-                                        } else {
-                                            fs::copy_file(sourceFile, destinationFile);
-                                        }
-                                    }
-                                }
-                                break;
-                                default:
-                                {
-                                    LOG_ERR("Received a file with an invalid data type: " << file);
-                                }
-                                break;
-                            }
+                            LOG_INFO("Creating " << file << "...");
                         }
-                        if (skippedFiles > 0)
-                            LOG_INFO("Skipped " << skippedFiles << " files that were already present");
-                    } else {
-                        if (fileKV.second.getDataType() != FileDataType::Directory) {
-                            if (fs::exists(file)) { 
-                                LOG_WARN("Replacing " << file << "...");
-                                fs::remove(file);
-                            } else {
-                                LOG_INFO("Creating " << file << "...");
-                            }
+                    }
+                    
+                    switch (dataType) {
+                        case FileDataType::Text:
+                        {
+                            std::ofstream handle = std::ofstream(file);
+                            handle << fileKV.second.getContent();
+                            handle.close();
+                            break;
                         }
-
-                        switch (dataType) {
-                            case FileDataType::Text:
-                            {
-                                std::ofstream handle = std::ofstream(file);
-                                handle << fileKV.second.getContent();
-                                handle.close();
-                            }
+                        case FileDataType::RawData:
+                        {
+                            fs::copy_file(fileKV.second.getPath(), file);
                             break;
-                            case FileDataType::RawData:
-                            {
-                                fs::copy_file(fileKV.second.getPath(), file);
-                            }
-                            break;
-                            case FileDataType::Directory:
-                            {
-                                fs::path sourcePath = fileKV.second.getPath();
-                                fs::path destinationPath = file;
-                                for (auto& file : getDirectoryFilesRecursive(sourcePath)) {
-                                    fs::path extraPath = file.lexically_relative(sourcePath);
-                                    fs::path destinationFile = destinationPath / extraPath;
-                                    fs::path sourceFile = sourcePath / extraPath;
+                        }
+                        case FileDataType::Directory:
+                        {
+                            fs::path sourcePath = fileKV.second.getPath();
+                            fs::path destinationPath = file;
+                            for (auto& file : getDirectoryFilesRecursive(sourcePath)) {
+                                fs::path extraPath = file.lexically_relative(sourcePath);
+                                fs::path destinationFile = destinationPath / extraPath;
+                                fs::path sourceFile = sourcePath / extraPath;
 
-                                    if (fs::exists(fs::symlink_status(destinationFile))) {
-                                        LOG_WARN("Replacing " << destinationFile << "...");
-                                        fs::remove(destinationFile);
-                                    } else {
-                                        LOG_INFO("Creating " << destinationFile << "...");
+                                if (fs::exists(fs::symlink_status(destinationFile))) {
+                                    if (cmd == "apply-soft") {
+                                        skippedFiles++;
+                                        continue;
                                     }
+                                    LOG_WARN("Replacing " << destinationFile << "...");
+                                    fs::remove(destinationFile);
+                                } else {
+                                    LOG_INFO("Creating " << destinationFile << "...");
+                                }
 
-                                    fs::create_directories(destinationFile.parent_path());
+                                fs::create_directories(destinationFile.parent_path());
 
-                                    if (fs::is_symlink(sourceFile)) {
-                                        fs::copy_symlink(sourceFile, destinationFile);
-                                    } else {
-                                        fs::copy_file(sourceFile, destinationFile);
-                                    }
+                                if (fs::is_symlink(sourceFile)) {
+                                    fs::copy_symlink(sourceFile, destinationFile);
+                                } else {
+                                    fs::copy_file(sourceFile, destinationFile);
                                 }
                             }
                             break;
-                            default:
-                            {
-                                LOG_ERR("Received a file with an invalid data type: " << file);
-                            }
+                        }
+                        default:
+                        {
+                            LOG_ERR("Received a file with an invalid data type: " << file);
                             break;
                         }
                     }
                 }
+                if (skippedFiles > 0) LOG_INFO("Skipped " << skippedFiles << " files that were already present");
                 module.runDelayed();
             }
         }
