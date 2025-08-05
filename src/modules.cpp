@@ -268,7 +268,7 @@ namespace rdm {
     }
 
     void ModuleManager::refreshModules() {
-        s_availableModules = ModuleManager::getAvailableModules(m_root, m_destinationRoot);
+        s_availableModules = ModuleManager::getAvailableModules(m_root);
         m_modules = ModuleManager::getModules(m_root, m_destinationRoot);
     }
 
@@ -280,7 +280,7 @@ namespace rdm {
         return s_availableModules;
     }
 
-    ModulePaths ModuleManager::getAvailableModules(fs::path root, fs::path destinationRoot) {
+    ModulePaths ModuleManager::getAvailableModules(fs::path root) {
         LOG_DEBUG("Getting all available modules...");
         ModulePaths modules;
         modules.reserve(32);
@@ -288,7 +288,7 @@ namespace rdm {
         for (auto& file : fs::directory_iterator(root)) {
             auto filePath = file.path();
             if (file.is_directory()) {
-                ModulePaths nestedModules = ModuleManager::getAvailableModules(filePath, destinationRoot);
+                ModulePaths nestedModules = ModuleManager::getAvailableModules(filePath);
                 modules.reserve(nestedModules.size());
                 modules.merge(nestedModules);
             } else {

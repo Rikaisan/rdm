@@ -94,7 +94,7 @@ namespace rdm {
         static bool shouldProcessAllModules();
         static bool shouldProcessModule(std::string module);
         static ModuleList getModules(fs::path root, fs::path destinationRoot);
-        static ModulePaths getAvailableModules(fs::path root, fs::path destinationRoot);
+        static ModulePaths getAvailableModules(fs::path root);
         static bool isFlagSet(std::string flag);
 
         static const std::string MODULE_PREFIX;

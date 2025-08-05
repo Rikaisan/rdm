@@ -6,6 +6,7 @@ namespace rdm::menus {
     void printDirHelp();
     void printHelpHelp();
     void printInitHelp();
+    void printListHelp();
     void printMainHelp();
     void printPreviewHelp();
 }

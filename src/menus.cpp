@@ -9,6 +9,7 @@ namespace rdm::menus {
         LOG(" dir               Print RDM_DATA_DIR to stdout, useful to quickly cd with 'cd $(rdm dir)'");
         LOG(" help              Prints the help menu of a command");
         LOG(" init              Initializes the rdm data directory");
+        LOG(" list              Prints all the available rdm modules");
         LOG(" preview           Preview an apply command, displays files returned by modules and sets the 'preview' flag");
     }
     
@@ -37,7 +38,12 @@ namespace rdm::menus {
 
     void printInitHelp() {
         LOG("Usage: rdm init");
-        LOG("Creates and populates the data directory with the rdm lua meta file");
+        LOG("Creates and populates the data directory with the rdm lua meta file, replaces the lua meta file if it exists");
+    }
+
+    void printListHelp() {
+        LOG("Usage: rdm list");
+        LOG("Prints all the available rdm modules");
     }
 
     void printCloneHelp() {

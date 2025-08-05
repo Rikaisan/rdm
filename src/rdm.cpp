@@ -21,7 +21,8 @@ enum class Command {
     APPLY_SOFT,
     INIT,
     CLONE,
-    DIR
+    DIR,
+    LIST
 };
 
 ModulesAndFlags parseModulesAndFlags(char* argv[], int count) {
@@ -77,6 +78,7 @@ int main(int argc, char* argv[]) {
     else if (raw_cmd == "init") cmd = Command::INIT;
     else if (raw_cmd == "clone") cmd = Command::CLONE;
     else if (raw_cmd == "dir") cmd = Command::DIR;
+    else if (raw_cmd == "list") cmd = Command::LIST;
 
     
     if (cmd == Command::HELP) {
@@ -344,6 +346,16 @@ int main(int argc, char* argv[]) {
         }
     } else if (cmd == Command::DIR) {
         LOG(RDM_DATA_DIR.c_str());
+    } else if (cmd == Command::LIST) {
+        const auto availableModules = ModuleManager::getAvailableModules(RDM_DATA_DIR / "home");
+        if (availableModules.empty()) {
+            LOG("No rdm modules found in " << RDM_DATA_DIR / "home");
+        } else {
+            LOG("Available modules:");
+        }
+        for (auto& [name, path] : availableModules) {
+            LOG(" - " << name);
+        }
     } else {
         LOG("Unrecognized command '" << raw_cmd << "'");
         menus::printMainHelp();
