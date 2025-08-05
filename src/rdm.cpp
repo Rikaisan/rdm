@@ -131,6 +131,9 @@ int main(int argc, char* argv[]) {
         // To let users choose to not run logic if previewing
         if (cmd == Command::PREVIEW) modulesAndFlags.flags.insert("preview");
 
+        LOG_SEP();
+        LOG_CUSTOM("Stage", "Loading all requested modules...");
+        LOG_SEP();
         ModuleManager moduleManager = ModuleManager(RDM_DATA_DIR / "home", getUserHome(), modulesAndFlags);
 
         for (auto& moduleName : modulesAndFlags.modules) {
@@ -139,6 +142,14 @@ int main(int argc, char* argv[]) {
             }
         }
 
+        LOG_SEP();
+        LOG_CUSTOM("Stage", "Running init operations...");
+        LOG_SEP();
+        moduleManager.runInits();
+
+        LOG_SEP();
+        LOG_CUSTOM("Stage", "Running file operations...");
+        LOG_SEP();
         int processedModules = 0;
         for (auto& [moduleName, module]: moduleManager.getModules()) {
             if (moduleManager.shouldProcessModule(moduleName)) {
@@ -150,16 +161,16 @@ int main(int argc, char* argv[]) {
                 if (generatedFiles.empty()) {
                     if (module.getExitCode() == LUA_OK) {
                         LOG_CUSTOM_DEBUG(moduleName, "The module '" << moduleName << "' was found but returned no files.");
-                        module.runDelayed();
                     } else {
                         LOG_CUSTOM_ERR(moduleName, "The module '" << moduleName << "' was found but had errors [" << module.getExitCode() << "]: " << module.getErrorString());
                     }
                     continue;
                 } else {
-                    LOG_CUSTOM_INFO(moduleName, "Started processing");
+                    if (isFlagPresent(Flag::VERBOSE, modulesAndFlags.program_flags)) LOG_CUSTOM_INFO(moduleName, "Started processing");
                 }
 
                 int skippedFiles = 0;
+                int modifiedFiles = 0;
                 int processedFiles = 0;
                 for (auto& fileKV : generatedFiles) {
                     const FileData& fileData = fileKV.second;
@@ -178,6 +189,7 @@ int main(int argc, char* argv[]) {
                         fs::create_directories(file.parent_path());
 
                         if (dataType != FileDataType::Directory) {
+                            processedFiles++;
                             if (fs::exists(file)) {
                                 if (cmd == Command::APPLY_SOFT) {
                                     skippedFiles++;
@@ -205,7 +217,7 @@ int main(int argc, char* argv[]) {
                                 std::ofstream handle = std::ofstream(file);
                                 handle << fileData.getContent();
                                 handle.close();
-                                processedFiles++;
+                                modifiedFiles++;
                             }
                             break;
                         case FileDataType::RawData:
@@ -213,7 +225,7 @@ int main(int argc, char* argv[]) {
                                 LOG("Raw Copy");
                             } else {
                                 fs::copy_file(fileData.getPath(), file);
-                                processedFiles++;
+                                modifiedFiles++;
                             }
                             break;
                         case FileDataType::Directory:
@@ -234,6 +246,7 @@ int main(int argc, char* argv[]) {
                                 fs::path sourcePath = fileData.getPath();
                                 fs::path destinationPath = file;
                                 for (auto& file : getDirectoryFilesRecursive(sourcePath)) {
+                                    processedFiles++;
                                     fs::path extraPath = file.lexically_relative(sourcePath);
                                     fs::path destinationFile = destinationPath / extraPath;
                                     fs::path sourceFile = sourcePath / extraPath;
@@ -261,7 +274,7 @@ int main(int argc, char* argv[]) {
                                         fs::copy_file(sourceFile, destinationFile);
                                     }
 
-                                    processedFiles++;
+                                    modifiedFiles++;
                                 }
                             }
                             break;
@@ -271,12 +284,21 @@ int main(int argc, char* argv[]) {
                 }
 
                 if (cmd != Command::PREVIEW) LOG_CUSTOM_INFO(moduleName, "Processed " << processedFiles << " total files");
+                if (cmd != Command::PREVIEW) LOG_CUSTOM_INFO(moduleName, "Created or modified " << modifiedFiles << " files");
                 if (cmd != Command::PREVIEW && skippedFiles > 0) LOG_CUSTOM_INFO(moduleName, "Skipped " << skippedFiles << " files that were already present");
-                module.runDelayed();
-                LOG_CUSTOM_INFO(moduleName, "Finished processing");
+                if (isFlagPresent(Flag::VERBOSE, modulesAndFlags.program_flags)) {
+                    if(cmd == Command::PREVIEW) LOG_SEP();
+                    LOG_CUSTOM_INFO(moduleName, "Finished processing");
+                }
             }
         }
+
+        LOG_SEP();
+        LOG_CUSTOM("Stage", "Running delayed operations...");
+        LOG_SEP();
+        moduleManager.runDelayeds();
         if (cmd == Command::PREVIEW && processedModules > 0) LOG_SEP();
+
     } else if (cmd == Command::INIT) {
         ensureDataDirExists(true);
         LOG("Initialized rdm at " << RDM_DATA_DIR.c_str());

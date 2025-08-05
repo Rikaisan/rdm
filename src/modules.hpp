@@ -42,6 +42,7 @@ namespace rdm {
 
     class Module;
     using ModuleList = std::unordered_map<std::string, Module>;
+    using ModulePaths = std::unordered_map<std::string, fs::path>;
     
     class Module {
         public:
@@ -50,7 +51,8 @@ namespace rdm {
         Module(Module& other) = delete;
         Module& operator=(const Module&) = delete;
         FileContentMap getGeneratedFiles();
-        std::vector<std::string> getExtraModules();
+        std::unordered_set<std::string> getExtraModules();
+        bool runInit();
         bool runDelayed();
         std::string getPath() const;
         int getExitCode() const;
@@ -83,19 +85,27 @@ namespace rdm {
         ModuleManager(fs::path root, fs::path destinationRoot, ModulesAndFlags& maf);
         void refreshModules();
         ModuleList& getModules();
+        ModulePaths& getAvailableModules();
         FileContentMap getGeneratedFiles();
+
+        void runInits();
+        void runDelayeds();
 
         static bool shouldProcessAllModules();
         static bool shouldProcessModule(std::string module);
         static ModuleList getModules(fs::path root, fs::path destinationRoot);
+        static ModulePaths getAvailableModules(fs::path root, fs::path destinationRoot);
         static bool isFlagSet(std::string flag);
 
         static const std::string MODULE_PREFIX;
         private:
+        static bool updateModuleList(fs::path root, fs::path destinationRoot, ModuleList& moduleList);
         const fs::path m_root;
         const fs::path m_destinationRoot;
         ModuleList m_modules;
+        static ModulePaths s_availableModules;
         static std::unordered_set<std::string> s_userModules;
+        static std::unordered_set<std::string> s_queuedModules;
         static std::unordered_set<std::string> s_userFlags;
     };
 }

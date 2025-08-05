@@ -7,7 +7,10 @@
 namespace rdm {
     const std::string ModuleManager::MODULE_PREFIX = "rdm-";
     const char* Module::LUA_FILE_DIR = "MODULE_ROOT";
+
+    ModulePaths ModuleManager::s_availableModules;
     std::unordered_set<std::string> ModuleManager::s_userModules;
+    std::unordered_set<std::string> ModuleManager::s_queuedModules;
     std::unordered_set<std::string> ModuleManager::s_userFlags;
     fs::path Module::s_currentlyExecutingFile;
 
@@ -163,8 +166,6 @@ namespace rdm {
         m_luaExitCode = luaL_dofile(m_state, m_modulePath.c_str());
         if (m_luaExitCode != LUA_OK) {
             m_luaErrorString = lua_tostring(m_state, -1);
-        } else {
-            callLuaMethod("RDM_Init");
         }
         return m_luaExitCode;
     }
@@ -173,39 +174,49 @@ namespace rdm {
         return path.stem().string().substr(ModuleManager::MODULE_PREFIX.length());
     }
 
-    std::vector<std::string> Module::getExtraModules() {
-        std::vector<std::string> extraModules;
+    std::unordered_set<std::string> Module::getExtraModules() {
+        std::unordered_set<std::string> extraModules;
          if (m_luaExitCode != LUA_OK) return extraModules;
         s_currentlyExecutingFile = m_modulePath;
         lua_State* L = m_state;
 
-        LOG_CUSTOM_DEBUG(m_name, "Started fetching extra modules");
+        LOG_CUSTOM_DEBUG(m_name, "Fetching extra modules");
 
         if (lua_getglobal(L, "RDM_AddModules") != LUA_TFUNCTION) {
             lua_pop(L, 1);
+            LOG_CUSTOM_INFO(m_name, "No extra modules requested");
             return extraModules;
         }
 
         m_luaExitCode = lua_pcall(L, 0, 1, 0);
         if (m_luaExitCode != LUA_OK) {
             m_luaErrorString = lua_tostring(m_state, -1);
+            LOG_CUSTOM_INFO(m_name, "No extra modules requested");
             return extraModules;
         }
 
-        if (!lua_istable(L, -1)) return extraModules;
+        if (!lua_istable(L, -1)) {
+            LOG_CUSTOM_INFO(m_name, "No extra modules requested");
+            return extraModules;
+        }
 
         lua_pushnil(L);
         while (lua_next(L, -2)) {
             if (lua_isstring(L, -1)) {
                 std::string moduleName = lua_tostring(L, -1);
-                LOG_CUSTOM_DEBUG(m_name, "Requested module: " << moduleName);
-                extraModules.push_back(moduleName);
+                const auto result = extraModules.insert(moduleName);
+                if (result.second) LOG_CUSTOM_INFO(m_name, "Requested module: " << moduleName);
             }
             lua_pop(L, 1);
         }
 
-        LOG_CUSTOM_DEBUG(m_name, "Finished getting extra modules, requested " << extraModules.size() << " extra modules");
+        LOG_CUSTOM_DEBUG(m_name, "Requested " << extraModules.size() << " extra modules");
         return extraModules;
+    }
+
+    bool Module::runInit() {
+        s_currentlyExecutingFile = m_modulePath;
+        return callLuaMethod("RDM_Init");
     }
 
     bool Module::runDelayed() {
@@ -240,22 +251,24 @@ namespace rdm {
     : m_root(root)
     , m_destinationRoot(destinationRoot)
     {
-        ModuleManager::s_userModules = std::unordered_set<std::string>();
+        ModuleManager::s_queuedModules = std::unordered_set<std::string>();
         ModuleManager::s_userFlags = std::unordered_set<std::string>();
 
-        s_userFlags.reserve(s_userFlags.size());
+        s_userFlags.reserve(maf.flags.size());
         for (auto& flag : maf.flags) {
             s_userFlags.insert(flag);
         }
 
-        s_userModules.reserve(s_userModules.size());
+        s_userModules.reserve(maf.modules.size());
+        s_queuedModules.reserve(maf.modules.size());
         for (auto& module : maf.modules) {
-            s_userModules.insert(module);
+            s_queuedModules.insert(module);
         }
         this->refreshModules();
     }
 
     void ModuleManager::refreshModules() {
+        s_availableModules = ModuleManager::getAvailableModules(m_root, m_destinationRoot);
         m_modules = ModuleManager::getModules(m_root, m_destinationRoot);
     }
 
@@ -263,27 +276,72 @@ namespace rdm {
         return m_modules;
     }
 
-    ModuleList ModuleManager::getModules(fs::path root, fs::path destinationRoot) {
-        ModuleList modules;
+    ModulePaths& ModuleManager::getAvailableModules() {
+        return s_availableModules;
+    }
+
+    ModulePaths ModuleManager::getAvailableModules(fs::path root, fs::path destinationRoot) {
+        LOG_DEBUG("Getting all available modules...");
+        ModulePaths modules;
         modules.reserve(32);
 
         for (auto& file : fs::directory_iterator(root)) {
             auto filePath = file.path();
             if (file.is_directory()) {
-                ModuleList nestedModules = ModuleManager::getModules(filePath, destinationRoot);
-                for (auto& module : nestedModules) {
-                    modules.insert(std::move(module));
-                }
+                ModulePaths nestedModules = ModuleManager::getAvailableModules(filePath, destinationRoot);
+                modules.reserve(nestedModules.size());
+                modules.merge(nestedModules);
             } else {
                 std::string fileName = filePath.filename();
-                if (fileName.starts_with(MODULE_PREFIX) && fileName.ends_with(".lua") && shouldProcessModule(Module::getNameFromPath(fileName))) {
-                    Module module = Module(filePath, destinationRoot);
-                    modules.emplace(module.getName(), std::move(module));
+                if (fileName.starts_with(MODULE_PREFIX) && fileName.ends_with(".lua")) {
+                    modules.emplace(Module::getNameFromPath(filePath), filePath);
                 }
             }
         }
 
         return modules;
+    }
+
+    ModuleList ModuleManager::getModules(fs::path root, fs::path destinationRoot) {
+        ModuleList modules;
+        modules.reserve(s_queuedModules.size());
+
+        updateModuleList(root, destinationRoot, modules);
+
+        return modules;
+    }
+
+    bool ModuleManager::updateModuleList(fs::path root, fs::path destinationRoot, ModuleList& moduleList) {
+        std::unordered_set<std::string> newQueueItems;
+        for (auto& moduleName : s_queuedModules) {
+            if (s_availableModules.contains(moduleName) && !moduleList.contains(moduleName)) {
+                LOG_DEBUG("Started processing " << moduleName);
+                Module module = Module(s_availableModules.at(moduleName), destinationRoot);
+                auto extraModules = module.getExtraModules();
+                moduleList.emplace(moduleName, std::move(module));
+
+                if (!extraModules.empty()) {
+                    for (auto& extraName : extraModules) {
+                        if (!s_queuedModules.contains(extraName) && !moduleList.contains(extraName)) {
+                            LOG_DEBUG("Queued " << extraName << " for processing");
+                            newQueueItems.insert(extraName);
+                        }
+                    }
+                } else {
+                    LOG_DEBUG("No extra modules queued");
+                }
+
+                s_userModules.insert(moduleName);
+                LOG_DEBUG("Finished processing " << moduleName);
+            }
+        }
+
+        s_queuedModules = newQueueItems;
+        if (!s_queuedModules.empty()) {
+            updateModuleList(root, destinationRoot, moduleList);
+            return true;
+        }
+        return false;
     }
 
     FileContentMap ModuleManager::getGeneratedFiles() {
@@ -298,12 +356,24 @@ namespace rdm {
         return files;
     }
 
+    void ModuleManager::runInits() {
+        for (auto& [name, module] : m_modules) {
+            module.runInit();
+        }
+    }
+
+    void ModuleManager::runDelayeds() {
+        for (auto& [name, module] : m_modules) {
+            module.runDelayed();
+        }
+    }
+
     bool ModuleManager::isFlagSet(std::string flag) {
         return s_userFlags.contains(flag);
     }
 
     bool ModuleManager::shouldProcessAllModules() {
-        return s_userModules.empty();
+        return s_userModules.empty() && s_queuedModules.empty();
     }
 
     bool ModuleManager::shouldProcessModule(std::string module) {

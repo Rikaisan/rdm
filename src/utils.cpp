@@ -42,27 +42,30 @@ fs::path rdm::getDataDir() {
 }
 
 bool rdm::isAllowedPath(fs::path base, fs::path userPath, bool mustExist) {
-    LOG_DEBUG("Validating path: " << userPath);
+    // LOG_DEBUG("Validating path: " << userPath);
     fs::path absoluteBase = fs::weakly_canonical(base);
     fs::path absoluteUser = fs::weakly_canonical(userPath);
 
-    LOG_DEBUG("Absolute base: " << absoluteBase);
-    LOG_DEBUG("Absolute user: " << absoluteUser);
+    // LOG_DEBUG("Absolute base: " << absoluteBase);
+    // LOG_DEBUG("Absolute user: " << absoluteUser);
 
     if (mustExist && !fs::exists(absoluteBase)) {
-        LOG_DEBUG("Path doesn't exist: " << absoluteBase);
-        LOG_DEBUG("Denied!");
+        LOG_DEBUG("Denied path: " << userPath);
+        LOG_DEBUG("[Reason] Path doesn't exist: " << absoluteBase);
         return false;
     }
 
     if (mustExist && !fs::exists(absoluteUser)) {
-        LOG_DEBUG("Path doesn't exist: " << absoluteUser);
-        LOG_DEBUG("Denied!");
+        LOG_DEBUG("Denied path: " << userPath);
+        LOG_DEBUG("[Reason] Path doesn't exist: " << absoluteUser);
         return false;
     }
 
     bool isValid = absoluteUser.string().starts_with(absoluteBase.c_str());
-    if (isValid) { LOG_DEBUG("Pass!"); } else { LOG_DEBUG("Denied!"); }
+    if (!isValid) {
+        LOG_DEBUG("Denied path: " << userPath);
+        LOG_DEBUG("[Reason] Invalid access");
+    }
     return isValid;
 }
 
