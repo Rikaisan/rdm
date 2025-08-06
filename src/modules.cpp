@@ -50,6 +50,16 @@ namespace rdm {
         return m_dataType;
     }
 
+    bool FileData::isExecutable() const {
+        return m_isExecutable;
+    }
+    void FileData::setExecutable(bool executable) {
+        m_isExecutable = executable;
+    }
+    void FileData::setExecutableRules(std::string pattern) {
+        m_execPattern = pattern;
+    }
+
     Module::Module(fs::path modulePath, fs::path destinationRoot)
     : m_modulePath(modulePath)
     , m_destinationRoot(destinationRoot)

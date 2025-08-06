@@ -25,10 +25,15 @@ namespace rdm {
         std::string getContent() const;
         fs::path getPath() const;
         FileDataType getDataType() const;
+        bool isExecutable() const;
+        void setExecutable(bool executable);
+        void setExecutableRules(std::string pattern);
 
         private:
         std::variant<std::string, fs::path> m_content, m_filePath;
         FileDataType m_dataType;
+        std::string m_execPattern;
+        bool m_isExecutable;
     };
 
     using FileContentMap = std::unordered_map<std::string, FileData>;
