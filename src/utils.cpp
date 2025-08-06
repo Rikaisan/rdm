@@ -1,9 +1,9 @@
 #include "utils.hpp"
-#include "Logger.hpp"
 #include <algorithm>
-
-#include "rdmlib.hpp"
 #include <fstream>
+#include "Logger.hpp"
+#include "rdmlib.hpp"
+#include <fnmatch.h>
 
 inline void rdm::ltrim(std::string &s) {
     s.erase(s.begin(), std::find_if(s.begin(), s.end(), [](unsigned char ch) {
@@ -83,6 +83,10 @@ std::vector<fs::path> rdm::getDirectoryFilesRecursive(fs::path root) {
         }
     }
     return files;
+}
+
+bool rdm::fileMatchesPattern(std::string fileName, std::string pattern) {
+    return fnmatch(pattern.c_str(), fileName.c_str(), FNM_EXTMATCH) != FNM_NOMATCH;
 }
 
 void rdm::ensureDataDirExists(bool populate) {

@@ -17,6 +17,7 @@ namespace rdm {
     
     bool isAllowedPath(fs::path base, fs::path userPath, bool mustExist);
     std::vector<fs::path> getDirectoryFilesRecursive(fs::path root);
+    bool fileMatchesPattern(std::string fileName, std::string pattern);
 
     fs::path getDataDir();
     fs::path getUserHome();
