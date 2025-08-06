@@ -29,6 +29,10 @@ namespace rdm {
 
     FileData::FileData(FileData&& other) {
         m_dataType = other.m_dataType;
+        m_isExecutable = other.m_isExecutable;
+        m_execPattern = other.m_execPattern;
+        other.m_execPattern = std::string();
+        
         if (other.m_dataType == FileDataType::Text) {
             m_content = other.m_content;
             other.m_content = std::string();
