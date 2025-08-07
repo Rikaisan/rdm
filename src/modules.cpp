@@ -114,13 +114,17 @@ namespace rdm {
         while (lua_next(L, -2)) {
             if (lua_isstring(L, -2)) {
                 std::string key = lua_tostring(L, -2);
+                fs::path userPath = m_destinationRoot / key;
+                if (!isAllowedPath(m_destinationRoot, userPath, false)) {
+                    LOG_CUSTOM_ERR(m_name, "Tried to add a file to an invalid location: " << key);
+                    lua_pop(L, 1);
+                    continue;
+                }
+
                 if (lua_isstring(L, -1)) {
                     FileData value(lua_tostring(L, -1));
-                    fs::path userPath = m_destinationRoot / key;
-                    if (isAllowedPath(m_destinationRoot, userPath, false)) {
-                        LOG_CUSTOM_DEBUG(m_name, "Added text file");
-                        files.emplace(userPath, std::move(value)); // FIXME: What if the same file is specified twice? (relative paths)
-                    }
+                    files.emplace(userPath, std::move(value)); // FIXME: What if the same file is specified twice? (relative paths)
+                    LOG_CUSTOM_DEBUG(m_name, "Added text file");
                 }
                 else if (lua_istable(L, -1)) {
                     LOG_CUSTOM_DEBUG(m_name, "Found FileDescriptor");
@@ -144,7 +148,7 @@ namespace rdm {
                                     LOG_CUSTOM_ERR(m_name, "Invalid exec value for file " << key << ": Not a pattern");
                                 }
 
-                                files.emplace(m_destinationRoot / key, std::move(data)); // FIXME: What if the same file is specified twice? (relative paths)
+                                files.emplace(userPath, std::move(data)); // FIXME: What if the same file is specified twice? (relative paths)
                             } else {
                                 LOG_CUSTOM_ERR(m_name, "Invalid value for file " << key << ": Invalid or non-present path");
                             }
@@ -152,20 +156,17 @@ namespace rdm {
                         } else if (dataType == "string") {
                             int contentFieldType = lua_getfield(L, -2, "content");
                             if (contentFieldType == LUA_TSTRING) {
-                                fs::path userPath = m_destinationRoot / key;
-                                if (isAllowedPath(m_destinationRoot, userPath, false)) {
-                                    FileData data(lua_tostring(L, -1));
+                                FileData data(lua_tostring(L, -1));
 
-                                    int exec = lua_getfield(L, -3, "exec");
-                                    if (exec == LUA_TBOOLEAN) {
-                                        if (lua_toboolean(L, -1)) data.setExecutable(true);
-                                    } else {
-                                        LOG_CUSTOM_ERR(m_name, "Invalid exec value for file " << key << ": Not a boolean");
-                                    }
-
-                                    files.emplace(userPath, std::move(data)); // FIXME: What if the same file is specified twice? (relative paths)
-                                    LOG_CUSTOM_DEBUG(m_name, "Added text file");
+                                int exec = lua_getfield(L, -3, "exec");
+                                if (exec == LUA_TBOOLEAN) {
+                                    if (lua_toboolean(L, -1)) data.setExecutable(true);
+                                } else {
+                                    LOG_CUSTOM_ERR(m_name, "Invalid exec value for file " << key << ": Not a boolean");
                                 }
+
+                                files.emplace(userPath, std::move(data)); // FIXME: What if the same file is specified twice? (relative paths)
+                                LOG_CUSTOM_DEBUG(m_name, "Added text file");
                             } else {
                                 LOG_CUSTOM_ERR(m_name, "Invalid value for file " << key << ": Invalid content");
                             }
