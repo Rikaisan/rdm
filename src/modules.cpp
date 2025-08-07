@@ -146,7 +146,6 @@ namespace rdm {
                                 if (execFieldType != LUA_TNIL) {
                                     if (execFieldType == LUA_TSTRING || execFieldType == LUA_TBOOLEAN) {
                                         data.setExecutable(true);
-                                        LOG_CUSTOM_INFO(m_name, "Marked as exec: " << key);
                                     }
                                     if (execFieldType == LUA_TSTRING) {
                                         data.setExecutableRules(lua_tostring(L, -1));
@@ -166,7 +165,6 @@ namespace rdm {
 
                                 if (lua_getfield(L, -3, "exec") == LUA_TBOOLEAN) {
                                     if (lua_toboolean(L, -1)) data.setExecutable(true);
-                                    LOG_CUSTOM_INFO(m_name, "Marked as exec: " << key);
                                 } else {
                                     LOG_CUSTOM_ERR(m_name, "Invalid exec value for file " << key << ": Not a boolean");
                                 }
