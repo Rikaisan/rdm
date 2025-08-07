@@ -64,6 +64,10 @@ namespace rdm {
         m_execPattern = pattern;
     }
 
+    std::string FileData::getExecutablePattern() const {
+        return m_execPattern;
+    }
+
     Module::Module(fs::path modulePath, fs::path destinationRoot)
     : m_modulePath(modulePath)
     , m_destinationRoot(destinationRoot)
@@ -128,22 +132,25 @@ namespace rdm {
                 }
                 else if (lua_istable(L, -1)) {
                     LOG_CUSTOM_DEBUG(m_name, "Found FileDescriptor");
-                    int typeFieldType = lua_getfield(L, -1, "type");
-                    if (typeFieldType == LUA_TSTRING) {
+                    if (lua_getfield(L, -1, "type") == LUA_TSTRING) {
                         std::string dataType = lua_tostring(L, -1);
                         LOG_CUSTOM_DEBUG(m_name, "FileDescriptor type: " << dataType);
                         if (dataType == "bytes" || dataType == "directory") {
-                            int pathFieldType = lua_getfield(L, -2, "path");
-                            if (pathFieldType == LUA_TSTRING) {
+                            if (lua_getfield(L, -2, "path") == LUA_TSTRING) {
                                 FileDataType fileDataType = FileDataType::RawData;
                                 if (dataType == "directory") fileDataType = FileDataType::Directory;
                                 FileData data(fs::path(lua_tostring(L, -1)), fileDataType);
                                 LOG_CUSTOM_DEBUG(m_name, "Added file with type " << dataType);
 
-                                int exec = lua_getfield(L, -3, "exec");
-                                if (exec == LUA_TSTRING) {
-                                    data.setExecutable(true);
-                                    data.setExecutableRules(lua_tostring(L, -1));
+                                int execFieldType = lua_getfield(L, -3, "exec");
+                                if (execFieldType != LUA_TNIL) {
+                                    if (execFieldType == LUA_TSTRING || execFieldType == LUA_TBOOLEAN) {
+                                        data.setExecutable(true);
+                                        LOG_CUSTOM_INFO(m_name, "Marked as exec: " << key);
+                                    }
+                                    if (execFieldType == LUA_TSTRING) {
+                                        data.setExecutableRules(lua_tostring(L, -1));
+                                    }
                                 } else {
                                     LOG_CUSTOM_ERR(m_name, "Invalid exec value for file " << key << ": Not a pattern");
                                 }
@@ -154,13 +161,12 @@ namespace rdm {
                             }
                             lua_pop(L, 2);
                         } else if (dataType == "string") {
-                            int contentFieldType = lua_getfield(L, -2, "content");
-                            if (contentFieldType == LUA_TSTRING) {
+                            if (lua_getfield(L, -2, "content") == LUA_TSTRING) {
                                 FileData data(lua_tostring(L, -1));
 
-                                int exec = lua_getfield(L, -3, "exec");
-                                if (exec == LUA_TBOOLEAN) {
+                                if (lua_getfield(L, -3, "exec") == LUA_TBOOLEAN) {
                                     if (lua_toboolean(L, -1)) data.setExecutable(true);
+                                    LOG_CUSTOM_INFO(m_name, "Marked as exec: " << key);
                                 } else {
                                     LOG_CUSTOM_ERR(m_name, "Invalid exec value for file " << key << ": Not a boolean");
                                 }
@@ -196,6 +202,21 @@ namespace rdm {
     int Module::setupLuaState() {
         s_currentlyExecutingFile = m_modulePath;
         m_state = luaL_newstate();
+
+        // Still questioning if I should leave this or not
+        luaL_openlibs(m_state); // FIXME: Change to only load safe libs (?) maybe allow an --allow-unsafe flag?
+
+        // Modify string metatable to allow execs
+        lua_pushstring(m_state, "string");
+        lua_getmetatable(m_state, -1);
+        lua_getfield(m_state, -1, "__index");
+        lua_pushcfunction(m_state, lapi_stringExec);
+        lua_setfield(m_state, -2, "exec");
+        lua_pop(m_state, 1);
+        lua_setmetatable(m_state, -2);
+        lua_pop(m_state, 1);
+
+        // Globals
         lua_pushstring(m_state, m_modulePath.parent_path().c_str());
         lua_setglobal(m_state, LUA_FILE_DIR);
         lua_register(m_state, "Read", lapi_Read);
@@ -207,7 +228,7 @@ namespace rdm {
         lua_register(m_state, "Spawn", lapi_Spawn);
         lua_register(m_state, "File", lapi_File);
         lua_register(m_state, "Directory", lapi_Directory);
-        luaL_openlibs(m_state); // FIXME: Change to only load safe libs (?) maybe allow an --allow-unsafe flag?
+
         m_luaExitCode = luaL_dofile(m_state, m_modulePath.c_str());
         if (m_luaExitCode != LUA_OK) {
             m_luaErrorString = lua_tostring(m_state, -1);
@@ -217,6 +238,10 @@ namespace rdm {
 
     std::string Module::getNameFromPath(std::filesystem::path path) {
         return path.stem().string().substr(ModuleManager::MODULE_PREFIX.length());
+    }
+
+    fs::path Module::getCurrentlyExecutingFile() {
+        return s_currentlyExecutingFile;
     }
 
     std::unordered_set<std::string> Module::getExtraModules() {

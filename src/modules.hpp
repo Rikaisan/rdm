@@ -26,6 +26,7 @@ namespace rdm {
         fs::path getPath() const;
         FileDataType getDataType() const;
         bool isExecutable() const;
+        std::string getExecutablePattern() const;
         void setExecutable(bool executable);
         void setExecutableRules(std::string pattern);
 
@@ -66,13 +67,15 @@ namespace rdm {
         ~Module();
 
         static std::string getNameFromPath(std::filesystem::path path);
+        static fs::path getCurrentlyExecutingFile();
 
-        static fs::path s_currentlyExecutingFile;
-
+        
         private:
         int setupLuaState();
         bool callLuaMethod(std::string name);
-
+        
+        static fs::path s_currentlyExecutingFile;
+        
         const fs::path m_modulePath;
         const fs::path m_destinationRoot;
         const std::string m_name;

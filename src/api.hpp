@@ -13,5 +13,8 @@ namespace rdm {
     int lapi_File(lua_State* L);
     int lapi_Directory(lua_State* L);
 
+    int lapi_stringExec(lua_State* L);
+    int lapi_descriptorExec(lua_State* L);
+
     int createFileDescriptor(lua_State* L, std::string name);
 }

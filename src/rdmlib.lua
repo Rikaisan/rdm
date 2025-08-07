@@ -1,5 +1,5 @@
 --- @meta
---- version 1.0.0
+--- version 1.3.0
 
 --- @alias FileDescriptor table Describes a file and how it should be parsed by rdm
 
@@ -43,6 +43,16 @@ function ForceSpawn(filename) end
 function File(filename) end
 
 --- Describes that rdm should copy the entire directory contents
---- @param filename string
+--- @param path string
 --- @return FileDescriptor|nil
-function Directory(filename) end
+function Directory(path) end
+
+--- Converts a string to a FileDescriptor and marks it as executable
+--- @param self string
+--- @return FileDescriptor
+function string.exec(self) end
+
+--- Marks a FileDescriptor as executable
+--- @param self FileDescriptor
+--- @return FileDescriptor
+function table.exec(self) end
