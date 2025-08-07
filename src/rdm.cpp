@@ -219,6 +219,13 @@ int main(int argc, char* argv[]) {
                                 std::ofstream handle = std::ofstream(file);
                                 handle << fileData.getContent();
                                 handle.close();
+                                
+                                if (fileData.isExecutable()) {
+                                    if (isFlagPresent(Flag::VERBOSE, modulesAndFlags.program_flags))
+                                        LOG_CUSTOM_INFO(moduleName, "Making " << file << " executable");
+                                    std::filesystem::permissions(file, std::filesystem::perms::owner_exec | std::filesystem::perms::group_exec | std::filesystem::perms::others_exec, std::filesystem::perm_options::add);
+                                }
+                                
                                 modifiedFiles++;
                             }
                             break;
@@ -227,6 +234,13 @@ int main(int argc, char* argv[]) {
                                 LOG("Raw Copy");
                             } else {
                                 fs::copy_file(fileData.getPath(), file);
+
+                                if (fileData.isExecutable()) {
+                                    if (isFlagPresent(Flag::VERBOSE, modulesAndFlags.program_flags))
+                                        LOG_CUSTOM_INFO(moduleName, "Making " << file << " executable");
+                                    std::filesystem::permissions(file, std::filesystem::perms::owner_exec | std::filesystem::perms::group_exec | std::filesystem::perms::others_exec, std::filesystem::perm_options::add);
+                                }
+
                                 modifiedFiles++;
                             }
                             break;
@@ -245,6 +259,8 @@ int main(int argc, char* argv[]) {
                                     LOG(" + " << fileCount - filesToPrint << " more...");
                                 }
                             } else {
+                                bool shouldAlwaysExec = fileData.isExecutable() && (fileData.getExecutablePattern().empty() || fileData.getExecutablePattern() == "*");
+
                                 fs::path sourcePath = fileData.getPath();
                                 fs::path destinationPath = file;
                                 for (auto& file : getDirectoryFilesRecursive(sourcePath)) {
@@ -255,9 +271,9 @@ int main(int argc, char* argv[]) {
 
                                     if (fs::exists(fs::symlink_status(destinationFile))) {
                                         if (cmd == Command::APPLY_SOFT) {
-                                            skippedFiles++;
                                             if (isFlagPresent(Flag::VERBOSE, modulesAndFlags.program_flags))
                                                 LOG_CUSTOM_INFO(moduleName, "Skipping " << destinationFile);
+                                            skippedFiles++;
                                             continue;
                                         }
                                         if (isFlagPresent(Flag::VERBOSE, modulesAndFlags.program_flags))
@@ -274,6 +290,14 @@ int main(int argc, char* argv[]) {
                                         fs::copy_symlink(sourceFile, destinationFile);
                                     } else {
                                         fs::copy_file(sourceFile, destinationFile);
+                                    }
+
+                                    if (shouldAlwaysExec ||
+                                        (fileData.isExecutable() && fileMatchesPattern(destinationFile.filename(), fileData.getExecutablePattern()))
+                                    ) {
+                                        if (isFlagPresent(Flag::VERBOSE, modulesAndFlags.program_flags))
+                                            LOG_CUSTOM_INFO(moduleName, "Making " << destinationFile << " executable");
+                                        std::filesystem::permissions(destinationFile, std::filesystem::perms::owner_exec | std::filesystem::perms::group_exec | std::filesystem::perms::others_exec, std::filesystem::perm_options::add);
                                     }
 
                                     modifiedFiles++;
