@@ -1,12 +1,13 @@
 #include <unordered_set>
+#include <filesystem>
+#include <algorithm>
+#include <fstream>
 #include <string>
 
 #include "modules.hpp"
 #include "Logger.hpp"
 #include "menus.hpp"
 #include "utils.hpp"
-#include <filesystem>
-#include <fstream>
 #include "git2.h"
 
 using namespace rdm;
@@ -377,7 +378,15 @@ int main(int argc, char* argv[]) {
         } else {
             LOG("Available modules:");
         }
+        
+        std::vector<std::string> orderedModules;
+        orderedModules.reserve(availableModules.size());
         for (auto& [name, path] : availableModules) {
+            orderedModules.push_back(name);
+        }
+
+        std::sort(orderedModules.begin(), orderedModules.end());
+        for (auto& name : orderedModules) {
             LOG(" - " << name);
         }
     } else {
