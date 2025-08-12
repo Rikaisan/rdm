@@ -218,8 +218,8 @@ namespace rdm {
                 lua_pushcfunction(L, lapi_descriptorExec);
                 lua_setfield(L, -2, "exec");
                 lua_setfield(L, -2, "__index");
-                lua_setmetatable(L, -2);
             }
+            lua_setmetatable(L, -2);
         }
         return 1;
     }

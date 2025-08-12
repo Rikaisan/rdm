@@ -349,7 +349,6 @@ namespace rdm {
     }
 
     ModulePaths ModuleManager::getAvailableModules(fs::path root) {
-        LOG_DEBUG("Getting all available modules...");
         ModulePaths modules;
         modules.reserve(32);
 
