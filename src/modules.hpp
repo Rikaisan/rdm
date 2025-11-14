@@ -34,7 +34,7 @@ namespace rdm {
         std::variant<std::string, fs::path> m_content, m_filePath;
         FileDataType m_dataType;
         std::string m_execPattern;
-        bool m_isExecutable;
+        bool m_isExecutable = false;
     };
 
     using FileContentMap = std::unordered_map<std::string, FileData>;
