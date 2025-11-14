@@ -1,10 +1,11 @@
 project('rdm', 'cpp',
-  version : '1.3.1',
+  version : '1.3.2',
   default_options : ['warning_level=3',
                      'cpp_std=c++20',
                      'default_library=static',
                      'default_both_libraries=static',
-                     'prefer_static=true'])
+                     'prefer_static=true'
+                     ])
 
 # add_global_arguments('-D_NCOLOR', language: 'cpp')
 # add_global_arguments('-D_DEBUG', language: 'cpp')
