@@ -156,26 +156,25 @@ int main(int argc, char* argv[]) {
         int processedModules = 0;
         for (auto& [moduleName, module]: moduleManager.getModules()) {
             if (moduleManager.shouldProcessModule(moduleName)) {
-                FileContentMap generatedFiles = module.getGeneratedFiles();
+                std::optional<FileContentMap> generatedFiles = module.getGeneratedFiles();
                 processedModules++;
 
                 if (cmd == Command::PREVIEW) LOG_SEP();
 
-                if (generatedFiles.empty()) {
-                    if (module.getExitCode() == LUA_OK) {
-                        LOG_CUSTOM_DEBUG(moduleName, "The module '" << moduleName << "' was found but returned no files.");
-                    } else {
-                        LOG_CUSTOM_ERR(moduleName, "The module '" << moduleName << "' was found but had errors [" << module.getExitCode() << "]: " << module.getErrorString());
-                    }
+                if (!generatedFiles.has_value()) {
+                    LOG_CUSTOM_ERR(moduleName, "The module '" << moduleName << "' was found but had errors [" << module.getExitCode() << "]: " << module.getErrorString());
                     continue;
-                } else {
-                    if (isFlagPresent(Flag::VERBOSE, modulesAndFlags.program_flags)) LOG_CUSTOM_INFO(moduleName, "Started processing");
+                } else if (generatedFiles.value().empty()) {
+                    LOG_CUSTOM_DEBUG(moduleName, "The module '" << moduleName << "' was found but returned no files.");
+                    continue;
+                } else if (isFlagPresent(Flag::VERBOSE, modulesAndFlags.program_flags)) {
+                    LOG_CUSTOM_INFO(moduleName, "Started processing");
                 }
 
                 int skippedFiles = 0;
                 int modifiedFiles = 0;
                 int processedFiles = 0;
-                for (auto& fileKV : generatedFiles) {
+                for (auto& fileKV : generatedFiles.value()) {
                     const FileData& fileData = fileKV.second;
                     const FileDataType& dataType = fileData.getDataType();
                     const fs::path file = fileKV.first;

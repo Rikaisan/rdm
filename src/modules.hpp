@@ -6,6 +6,7 @@
 #include <lua.hpp>
 #include <vector>
 #include <variant>
+#include <optional>
 
 namespace fs = std::filesystem;
 
@@ -56,7 +57,7 @@ namespace rdm {
         Module(Module&& other);
         Module(Module& other) = delete;
         Module& operator=(const Module&) = delete;
-        FileContentMap getGeneratedFiles();
+        std::optional<FileContentMap> getGeneratedFiles();
         std::unordered_set<std::string> getExtraModules();
         bool runInit();
         bool runDelayed();

@@ -95,24 +95,25 @@ namespace rdm {
         return m_luaErrorString;
     }
 
-    FileContentMap Module::getGeneratedFiles() {
-        if (m_luaExitCode != LUA_OK) return FileContentMap();
+    std::optional<FileContentMap> Module::getGeneratedFiles() {
+        if (m_luaExitCode != LUA_OK) return std::optional<FileContentMap>();
         s_currentlyExecutingFile = m_modulePath;
         LOG_CUSTOM_DEBUG(m_name, "Started generating files");
-        FileContentMap files;
         lua_State* L = m_state;
         if (lua_getglobal(L, "RDM_GetFiles") != LUA_TFUNCTION) {
             lua_pop(L, 1);
-            return FileContentMap();
+            return std::optional<FileContentMap>();
         }
 
         m_luaExitCode = lua_pcall(L, 0, 1, 0);
         if (m_luaExitCode != LUA_OK) {
             m_luaErrorString = lua_tostring(m_state, -1);
-            return FileContentMap();
+            return std::optional<FileContentMap>();
         }
 
-        if (!lua_istable(L, -1)) return FileContentMap();
+        if (!lua_istable(L, -1)) return std::optional<FileContentMap>();
+
+        FileContentMap files;
 
         lua_pushnil(L);
         while (lua_next(L, -2)) {
@@ -190,7 +191,7 @@ namespace rdm {
         }
 
         LOG_CUSTOM_DEBUG(m_name, "Finished generating files");
-        return files;
+        return std::optional<FileContentMap>(std::move(files));
     }
 
     std::string Module::getPath() const { return m_modulePath; }
@@ -415,8 +416,10 @@ namespace rdm {
         FileContentMap files;
 
         for (auto& pair : m_modules) {
-            for (auto& fileKV : pair.second.getGeneratedFiles()) {
-                files.emplace(fileKV.first, std::move(fileKV.second)); // FIXME: What if the same file is specified twice?
+            auto files = pair.second.getGeneratedFiles();
+            if (!files.has_value()) continue;
+            for (auto& fileKV : files.value()) {
+                files.value().emplace(fileKV.first, std::move(fileKV.second)); // FIXME: What if the same file is specified twice?
             }
         }
         
