@@ -1,4 +1,5 @@
 .vscode/
+.cache/
 .vs/
 /build
 /home
