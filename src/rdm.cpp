@@ -233,6 +233,11 @@ int main(int argc, char* argv[]) {
                             if (cmd == Command::PREVIEW) {
                                 LOG("Raw Copy");
                             } else {
+                                if (fs::exists(file) && fs::is_directory(file)) {
+                                    LOG_CUSTOM_ERR(moduleName, "Tried to replace a directory with a file: '" << file << "' skipping to prevent data loss!");
+                                    break;
+                                }
+
                                 fs::copy_file(fileData.getPath(), file);
 
                                 if (fileData.isExecutable()) {
