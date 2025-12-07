@@ -200,6 +200,12 @@ int main(int argc, char* argv[]) {
                                     continue;
                                 }
 
+                                if (fs::is_directory(file)) {
+                                    skippedFiles++;
+                                    LOG_CUSTOM_ERR(moduleName, "Tried to replace a directory with a file at " << file << ", skipping to prevent data loss!");
+                                    continue;
+                                }
+
                                 if (isFlagPresent(Flag::VERBOSE, modulesAndFlags.program_flags))
                                     LOG_CUSTOM_WARN(moduleName, "Replacing " << file);
 
