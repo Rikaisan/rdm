@@ -17,27 +17,27 @@ const fs::path RDM_DATA_DIR = getDataDir();
 
 enum class Command {
     UNKNOWN,
-    HELP,
-    PREVIEW,
     APPLY,
-    APPLY_SOFT,
     APPLY_SAFE,
-    INIT,
+    APPLY_SOFT,
     CLONE,
     DIR,
-    LIST
+    HELP,
+    INIT,
+    LIST,
+    PREVIEW,
 };
 
 std::unordered_map<std::string, Command> COMMAND_MAP = {
-    { "help",       Command::HELP       },
-    { "preview",    Command::PREVIEW    },
     { "apply",      Command::APPLY      },
-    { "apply-soft", Command::APPLY_SOFT },
     { "apply-safe", Command::APPLY_SAFE },
-    { "init",       Command::INIT       },
+    { "apply-soft", Command::APPLY_SOFT },
     { "clone",      Command::CLONE      },
     { "dir",        Command::DIR        },
+    { "help",       Command::HELP       },
+    { "init",       Command::INIT       },
     { "list",       Command::LIST       },
+    { "preview",    Command::PREVIEW    },
 };
 
 ModulesAndFlags parseModulesAndFlags(char* argv[], int count) {
@@ -97,15 +97,15 @@ int main(int argc, char* argv[]) {
             typedef void (*HelpFunction)(void);
 
             std::unordered_map<std::string, HelpFunction> HELP_MAP = {
-                { "help",       menus::printHelpHelp    },
-                { "preview",    menus::printPreviewHelp },
                 { "apply",      menus::printApplyHelp   },
-                { "apply-soft", menus::printApplyHelp   },
                 { "apply-safe", menus::printApplyHelp   },
-                { "init",       menus::printInitHelp    },
+                { "apply-soft", menus::printApplyHelp   },
                 { "clone",      menus::printCloneHelp   },
                 { "dir",        menus::printDirHelp     },
+                { "help",       menus::printHelpHelp    },
+                { "init",       menus::printInitHelp    },
                 { "list",       menus::printListHelp    },
+                { "preview",    menus::printPreviewHelp },
             };
 
             std::string page = argv[2];
