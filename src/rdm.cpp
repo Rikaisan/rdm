@@ -1,3 +1,4 @@
+#include <cstdlib>
 #include <unordered_map>
 #include <unordered_set>
 #include <filesystem>
@@ -26,6 +27,7 @@ enum class Command {
     INIT,
     LIST,
     PREVIEW,
+    RESTORE
 };
 
 std::unordered_map<std::string, Command> COMMAND_MAP = {
@@ -38,6 +40,7 @@ std::unordered_map<std::string, Command> COMMAND_MAP = {
     { "init",       Command::INIT       },
     { "list",       Command::LIST       },
     { "preview",    Command::PREVIEW    },
+    { "restore",    Command::RESTORE    },
 };
 
 ModulesAndFlags parseModulesAndFlags(char* argv[], int count) {
@@ -106,6 +109,7 @@ int main(int argc, char* argv[]) {
                 { "init",       menus::printInitHelp    },
                 { "list",       menus::printListHelp    },
                 { "preview",    menus::printPreviewHelp },
+                { "restore",    menus::printRestoreHelp },
             };
 
             std::string page = argv[2];
@@ -423,6 +427,30 @@ int main(int argc, char* argv[]) {
         for (auto& name : orderedModules) {
             LOG(" - " << name);
         }
+    } else if (cmd == Command::RESTORE) {
+        fs::path backupDir = getBackupDir();
+        if (!fs::exists(backupDir) || (fs::exists(backupDir) && fs::is_empty(backupDir))) {
+            LOG_INFO("Nothing to restore");
+            return EXIT_SUCCESS;
+        }
+
+        int restoredFiles = 0;
+
+        auto files = getDirectoryFilesRecursive(backupDir);
+        LOG_INFO("Attempting to restore " << files.size() << " files...");
+
+
+        for (auto& sourceFile : getDirectoryFilesRecursive(backupDir)) {
+            fs::path relativeFile = sourceFile.lexically_relative(backupDir);
+            LOG_INFO("Restoring file: " << relativeFile);
+            fs::path destinationFile = getUserHome() / relativeFile;
+            if (fs::exists(destinationFile))
+                fs::remove(destinationFile);
+            copyFileOrSym(sourceFile, destinationFile);
+            restoredFiles++;
+        }
+
+        LOG_INFO("Finished restoring " << restoredFiles << " files");
     } else {
         LOG("Unrecognized command '" << raw_cmd << "'");
         menus::printMainHelp();
