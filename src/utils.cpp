@@ -47,6 +47,10 @@ fs::path rdm::getBackupDir() {
     return getDataDir() / "backup";
 }
 
+fs::path rdm::getBackupDir(std::string group) {
+    return getBackupDir() / group;
+}
+
 bool rdm::isAllowedPath(fs::path base, fs::path userPath, bool mustExist) {
     // LOG_DEBUG("Validating path: " << userPath);
     fs::path absoluteBase = fs::weakly_canonical(base);
@@ -147,8 +151,20 @@ void rdm::setupBackupDir() {
     }
 }
 
-bool rdm::backupEntry(fs::path entry) {
-    fs::path backup_entry = getBackupDir() / entry.lexically_relative(getUserHome());
+void rdm::setupBackupDir(std::string group) {
+    fs::path backupsDataDir = getBackupDir(group);
+
+    if (fs::exists(backupsDataDir) && !fs::is_empty(backupsDataDir)) {
+        fs::remove_all(backupsDataDir);
+    }
+
+    if (!fs::exists(backupsDataDir)) {
+        fs::create_directories(backupsDataDir);
+    }
+}
+
+bool rdm::backupEntry(std::string group, fs::path entry) {
+    fs::path backup_entry = getBackupDir(group) / entry.lexically_relative(getUserHome());
     if (fs::exists(backup_entry)) return false;
     copyFileOrSym(entry, backup_entry);
     return true;

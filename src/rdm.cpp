@@ -162,7 +162,7 @@ int main(int argc, char* argv[]) {
         }
 
         LOG_CUSTOM("Safety", "Cleaning backup directory...");
-        if (cmd == Command::APPLY_SAFE) setupBackupDir();
+        if (cmd == Command::APPLY_SAFE) setupBackupDir("home");
 
         LOG_SEP();
         LOG_CUSTOM("Stage", "Running init operations...");
@@ -223,7 +223,7 @@ int main(int argc, char* argv[]) {
                                 if (cmd == Command::APPLY_SAFE) {
                                     if (isFlagPresent(Flag::VERBOSE, modulesAndFlags.program_flags))
                                         LOG_CUSTOM_INFO(moduleName, "Creating backup of " << file);
-                                    backupEntry(file);
+                                    backupEntry("home", file);
                                     savedFiles++;
                                 }
 
@@ -317,7 +317,7 @@ int main(int argc, char* argv[]) {
                                         if (cmd == Command::APPLY_SAFE) {
                                             if (isFlagPresent(Flag::VERBOSE, modulesAndFlags.program_flags))
                                                 LOG_CUSTOM_INFO(moduleName, "Creating backup of " << destinationFile);
-                                            backupEntry(destinationFile);
+                                            backupEntry("home", destinationFile);
                                             savedFiles++;
                                         }
                                         if (isFlagPresent(Flag::VERBOSE, modulesAndFlags.program_flags))
@@ -428,7 +428,7 @@ int main(int argc, char* argv[]) {
             LOG(" - " << name);
         }
     } else if (cmd == Command::RESTORE) {
-        fs::path backupDir = getBackupDir();
+        fs::path backupDir = getBackupDir("home");
         if (!fs::exists(backupDir) || (fs::exists(backupDir) && fs::is_empty(backupDir))) {
             LOG_INFO("Nothing to restore");
             return EXIT_SUCCESS;
