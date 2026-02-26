@@ -9,4 +9,5 @@ namespace rdm::menus {
     void printListHelp();
     void printMainHelp();
     void printPreviewHelp();
+    void printRestoreHelp();
 }

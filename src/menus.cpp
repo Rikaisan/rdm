@@ -12,6 +12,7 @@ namespace rdm::menus {
         LOG(" init              Initializes the rdm data directory");
         LOG(" list              Prints all the available rdm modules");
         LOG(" preview           Preview an apply command, displays files returned by modules and sets the 'preview' flag");
+        LOG(" restore           Restores files from the backup directory (created when using apply-safe)");
     }
     
     void printApplyHelp() {
@@ -34,7 +35,7 @@ namespace rdm::menus {
 
     void printHelpHelp() {
         LOG("Usage: rdm help <command>");
-        LOG("Valid commands: apply, apply-safe, apply-soft, clone, dir, help, init, list, preview");
+        LOG("Valid commands: apply, apply-safe, apply-soft, clone, dir, help, init, list, preview, restore");
     }
 
     void printInitHelp() {
@@ -61,5 +62,10 @@ namespace rdm::menus {
         LOG(" -f,--flags        A space separated list of flags that should be passed to the modules");
         LOG("Notes:");
         LOG(" Works exactly like apply, except it sets the 'preview' flag and will display the files instead of creating or replacing them");
+    }
+
+    void printRestoreHelp() {
+        LOG("Usage: rdm restore");
+        LOG("Restores files from the backup directory (created when using apply-safe)");
     }
 }
