@@ -8,6 +8,7 @@ int rdm::commands::list(Command, int, char *[]) {
     const auto availableModules = ModuleManager::getAvailableModules(RDM_DATA_DIR / "home");
     if (availableModules.empty()) {
         LOG("No rdm modules found in " << RDM_DATA_DIR / "home");
+        return EXIT_SUCCESS;
     } else {
         LOG("Available modules:");
     }
