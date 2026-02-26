@@ -1,1 +1,2 @@
-sources = files('rdm.cpp', 'modules.cpp', 'menus.cpp', 'utils.cpp', 'api.cpp')
+subdir('commands')
+sources += files('rdm.cpp', 'modules.cpp', 'menus.cpp', 'utils.cpp', 'api.cpp')

@@ -1,0 +1,1 @@
+sources = files('apply.cpp', 'clone.cpp', 'commands.cpp', 'help.cpp', 'list.cpp', 'restore.cpp')
