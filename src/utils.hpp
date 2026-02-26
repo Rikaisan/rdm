@@ -20,9 +20,13 @@ namespace rdm {
     bool fileMatchesPattern(std::string fileName, std::string pattern);
 
     fs::path getDataDir();
+    fs::path getBackupDir();
     fs::path getUserHome();
     void ensureDataDirExists(bool populate);
     bool copyRDMLib();
+    void setupBackupDir();
+    bool backupEntry(fs::path entry);
+    void copyFileOrSym(fs::path source, fs::path dest);
 
     bool isFlagPresent(Flag flag, std::unordered_set<std::string> flags);
 }

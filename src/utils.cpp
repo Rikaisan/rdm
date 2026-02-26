@@ -1,5 +1,7 @@
 #include "utils.hpp"
 #include <algorithm>
+#include <ctime>
+#include <filesystem>
 #include <fstream>
 #include "Logger.hpp"
 #include "rdmlib.hpp"
@@ -39,6 +41,10 @@ fs::path rdm::getDataDir() {
     }
     rdmDataDir /= "rdm";
     return rdmDataDir;
+}
+
+fs::path rdm::getBackupDir() {
+    return getDataDir() / "backup";
 }
 
 bool rdm::isAllowedPath(fs::path base, fs::path userPath, bool mustExist) {
@@ -90,16 +96,18 @@ bool rdm::fileMatchesPattern(std::string fileName, std::string pattern) {
 }
 
 void rdm::ensureDataDirExists(bool populate) {
-    auto dataDir = getDataDir();
+    fs::path dataDir = getDataDir();
     if (!fs::exists(dataDir)) {
         fs::create_directories(dataDir);
     }
 
     if (populate) {
-        auto homeDataDir = getDataDir() / "home";
+        fs::path homeDataDir = getDataDir() / "home";
         if (!fs::exists(homeDataDir)) {
             fs::create_directories(homeDataDir);
         }
+
+        setupBackupDir();
 
         if (!copyRDMLib()) LOG_ERR("Couldn't copy RDM lib, use the copy at /usr/share/rdm/rdmlib.lua as a fallback.");
 
@@ -125,6 +133,34 @@ bool rdm::copyRDMLib() {
     }
 
     return true;
+}
+
+void rdm::setupBackupDir() {
+    fs::path backupsDataDir = getBackupDir();
+
+    if (fs::exists(backupsDataDir) && !fs::is_empty(backupsDataDir)) {
+        fs::remove_all(backupsDataDir);
+    }
+
+    if (!fs::exists(backupsDataDir)) {
+        fs::create_directories(backupsDataDir);
+    }
+}
+
+bool rdm::backupEntry(fs::path entry) {
+    fs::path backup_entry = getBackupDir() / entry.lexically_relative(getUserHome());
+    if (fs::exists(backup_entry)) return false;
+    copyFileOrSym(entry, backup_entry);
+    return true;
+}
+
+void rdm::copyFileOrSym(fs::path source, fs::path dest) {
+    fs::create_directories(dest.parent_path());
+    if (fs::is_symlink(source)) {
+        fs::copy_symlink(source, dest);
+    } else {
+        fs::copy_file(source, dest);
+    }
 }
 
 bool rdm::isFlagPresent(Flag flag, std::unordered_set<std::string> flags) {

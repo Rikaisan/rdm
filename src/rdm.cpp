@@ -1,3 +1,4 @@
+#include <unordered_map>
 #include <unordered_set>
 #include <filesystem>
 #include <algorithm>
@@ -20,10 +21,23 @@ enum class Command {
     PREVIEW,
     APPLY,
     APPLY_SOFT,
+    APPLY_SAFE,
     INIT,
     CLONE,
     DIR,
     LIST
+};
+
+std::unordered_map<std::string, Command> COMMAND_MAP = {
+    { "help",       Command::HELP       },
+    { "preview",    Command::PREVIEW    },
+    { "apply",      Command::APPLY      },
+    { "apply-soft", Command::APPLY_SOFT },
+    { "apply-safe", Command::APPLY_SAFE },
+    { "init",       Command::INIT       },
+    { "clone",      Command::CLONE      },
+    { "dir",        Command::DIR        },
+    { "list",       Command::LIST       },
 };
 
 ModulesAndFlags parseModulesAndFlags(char* argv[], int count) {
@@ -71,37 +85,35 @@ int main(int argc, char* argv[]) {
     }
 
     std::string raw_cmd = argv[1];
-    Command cmd = Command::UNKNOWN;
-    if (raw_cmd == "help") cmd = Command::HELP;
-    else if (raw_cmd == "preview") cmd = Command::PREVIEW;
-    else if (raw_cmd == "apply") cmd = Command::APPLY;
-    else if (raw_cmd == "apply-soft") cmd = Command::APPLY_SOFT;
-    else if (raw_cmd == "init") cmd = Command::INIT;
-    else if (raw_cmd == "clone") cmd = Command::CLONE;
-    else if (raw_cmd == "dir") cmd = Command::DIR;
-    else if (raw_cmd == "list") cmd = Command::LIST;
 
+
+    Command cmd = Command::UNKNOWN;
+    if (COMMAND_MAP.contains(raw_cmd)) cmd = COMMAND_MAP.at(raw_cmd);
     
     if (cmd == Command::HELP) {
         if (argc < 3) {
             menus::printHelpHelp();
         } else {
+            typedef void (*HelpFunction)(void);
+
+            std::unordered_map<std::string, HelpFunction> HELP_MAP = {
+                { "help",       menus::printHelpHelp    },
+                { "preview",    menus::printPreviewHelp },
+                { "apply",      menus::printApplyHelp   },
+                { "apply-soft", menus::printApplyHelp   },
+                { "apply-safe", menus::printApplyHelp   },
+                { "init",       menus::printInitHelp    },
+                { "clone",      menus::printCloneHelp   },
+                { "dir",        menus::printDirHelp     },
+                { "list",       menus::printListHelp    },
+            };
+
             std::string page = argv[2];
-            if (page == "preview") {
-                menus::printPreviewHelp();
-            } else if (page == "apply" || page == "apply-soft") {
-                menus::printApplyHelp();
-            } else if (page == "init") {
-                menus::printInitHelp();
-            } else if (page == "clone") {
-                menus::printCloneHelp();
-            } else if (page == "dir") {
-                menus::printDirHelp();
-            } else {
-                menus::printHelpHelp();
-            }
+            HelpFunction helpFunction = HELP_MAP.at("help");
+            if (HELP_MAP.contains(page)) helpFunction = HELP_MAP.at(page);
+            helpFunction();
         }
-    } else if (cmd == Command::PREVIEW || cmd == Command::APPLY || cmd == Command::APPLY_SOFT) {
+    } else if (cmd == Command::PREVIEW || cmd == Command::APPLY || cmd == Command::APPLY_SOFT || cmd == Command::APPLY_SAFE) {
         if (!fs::exists(RDM_DATA_DIR) || fs::is_empty(RDM_DATA_DIR)) {
             LOG_ERR("RDM data dir is empty or doesn't exist, run either 'rdm init' or 'rdm clone' to initialize it before running this command");
             return EXIT_FAILURE;
@@ -145,6 +157,9 @@ int main(int argc, char* argv[]) {
             }
         }
 
+        LOG_CUSTOM("Safety", "Cleaning backup directory...");
+        if (cmd == Command::APPLY_SAFE) setupBackupDir();
+
         LOG_SEP();
         LOG_CUSTOM("Stage", "Running init operations...");
         LOG_SEP();
@@ -174,6 +189,7 @@ int main(int argc, char* argv[]) {
                 int skippedFiles = 0;
                 int modifiedFiles = 0;
                 int processedFiles = 0;
+                int savedFiles = 0;
                 for (auto& fileKV : generatedFiles.value()) {
                     const FileData& fileData = fileKV.second;
                     const FileDataType& dataType = fileData.getDataType();
@@ -198,6 +214,13 @@ int main(int argc, char* argv[]) {
                                     if (isFlagPresent(Flag::VERBOSE, modulesAndFlags.program_flags))
                                         LOG_CUSTOM_INFO(moduleName, "Skipping " << file);
                                     continue;
+                                }
+
+                                if (cmd == Command::APPLY_SAFE) {
+                                    if (isFlagPresent(Flag::VERBOSE, modulesAndFlags.program_flags))
+                                        LOG_CUSTOM_INFO(moduleName, "Creating backup of " << file);
+                                    backupEntry(file);
+                                    savedFiles++;
                                 }
 
                                 if (fs::is_directory(file)) {
@@ -244,7 +267,7 @@ int main(int argc, char* argv[]) {
                                     break;
                                 }
 
-                                fs::copy_file(fileData.getPath(), file);
+                                copyFileOrSym(fileData.getPath(), file);
 
                                 if (fileData.isExecutable()) {
                                     if (isFlagPresent(Flag::VERBOSE, modulesAndFlags.program_flags))
@@ -287,6 +310,12 @@ int main(int argc, char* argv[]) {
                                             skippedFiles++;
                                             continue;
                                         }
+                                        if (cmd == Command::APPLY_SAFE) {
+                                            if (isFlagPresent(Flag::VERBOSE, modulesAndFlags.program_flags))
+                                                LOG_CUSTOM_INFO(moduleName, "Creating backup of " << destinationFile);
+                                            backupEntry(destinationFile);
+                                            savedFiles++;
+                                        }
                                         if (isFlagPresent(Flag::VERBOSE, modulesAndFlags.program_flags))
                                             LOG_CUSTOM_WARN(moduleName, "Replacing " << destinationFile);
                                         fs::remove(destinationFile);
@@ -295,13 +324,7 @@ int main(int argc, char* argv[]) {
                                             LOG_CUSTOM_INFO(moduleName, "Creating " << destinationFile);
                                     }
 
-                                    fs::create_directories(destinationFile.parent_path());
-
-                                    if (fs::is_symlink(sourceFile)) {
-                                        fs::copy_symlink(sourceFile, destinationFile);
-                                    } else {
-                                        fs::copy_file(sourceFile, destinationFile);
-                                    }
+                                    copyFileOrSym(sourceFile, destinationFile);
 
                                     if (shouldAlwaysExec ||
                                         (fileData.isExecutable() && fileMatchesPattern(destinationFile.filename(), fileData.getExecutablePattern()))
@@ -322,6 +345,7 @@ int main(int argc, char* argv[]) {
 
                 if (cmd != Command::PREVIEW) LOG_CUSTOM_INFO(moduleName, "Processed " << processedFiles << " total files");
                 if (cmd != Command::PREVIEW) LOG_CUSTOM_INFO(moduleName, "Created or modified " << modifiedFiles << " files");
+                if (cmd == Command::APPLY_SAFE) LOG_CUSTOM_INFO(moduleName, "Backed up " << savedFiles << " files that were already present");
                 if (cmd != Command::PREVIEW && skippedFiles > 0) LOG_CUSTOM_INFO(moduleName, "Skipped " << skippedFiles << " files that were already present");
                 if (isFlagPresent(Flag::VERBOSE, modulesAndFlags.program_flags)) {
                     if(cmd == Command::PREVIEW) LOG_SEP();
