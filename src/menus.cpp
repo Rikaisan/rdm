@@ -23,7 +23,7 @@ namespace rdm::menus {
         LOG("Examples:");
         LOG(" rdm apply                                            -> Applies all modules without any flags set");
         LOG(" rdm apply -f es setup                                -> Applies all modules with the flags 'es' and 'setup' set");
-        LOG(" rdm apply-safe hyprland wallpapers -v -f laptop arch -> Applies the hyprland and wallpapers modules with the flags 'laptop' and 'arch' set and enables verbose mode");
+        LOG(" rdm apply-safe hyprland wallpapers -v -f laptop arch -> Applies the hyprland and wallpapers modules with the flags 'laptop' and 'arch' set, enables verbose mode and backups replaced files");
         LOG(" rdm apply-soft wallpapers                            -> Applies the wallpapers module without replacing any existing files");
     }
 
