@@ -1,6 +1,6 @@
 #include "commands.hpp"
-#include "src/Logger.hpp"
 #include "src/utils.hpp"
+#include "logger.hpp"
 #include <cstdlib>
 
 int rdm::commands::restore(Command, int, char*[]) {

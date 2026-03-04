@@ -1,5 +1,8 @@
 #pragma once
 
+// This is a simple logging helper I use throughout my C++ applications
+// - Rikai
+
 #ifndef _NLOG
 #include <iostream>
 #ifndef _NCOLOR

@@ -1,4 +1,4 @@
-#include "Logger.hpp"
+#include "logger.hpp"
 
 namespace rdm::menus {
     void printMainHelp() {

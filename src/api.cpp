@@ -4,7 +4,7 @@
 #include <filesystem>
 #include "utils.hpp"
 #include "modules.hpp"
-#include "Logger.hpp"
+#include "logger.hpp"
 
 namespace fs = std::filesystem;
 

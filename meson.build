@@ -10,9 +10,12 @@ lua_dep = subproject('lua').get_variable('lua_dep')
 
 subdir('src')
 
+includes = include_directories('include')
+
 exe = executable('rdm',
   sources,
   dependencies: [lua_dep],
+  include_directories: includes,
   install : true)
 
 test('basic', exe)

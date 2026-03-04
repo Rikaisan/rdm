@@ -1,7 +1,7 @@
 #include "commands.hpp"
-#include "src/Logger.hpp"
 #include "src/menus.hpp"
 #include "src/utils.hpp"
+#include "logger.hpp"
 #include <cstdlib>
 #include <dlfcn.h>
 #include <git2.h>

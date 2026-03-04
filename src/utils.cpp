@@ -4,7 +4,7 @@
 #include <filesystem>
 #include <fstream>
 #include <fnmatch.h>
-#include "Logger.hpp"
+#include "logger.hpp"
 #include "rdmlib.hpp"
 
 const std::unordered_map<std::string, rdm::Flag> rdm::FLAG_MAP = {

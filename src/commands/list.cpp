@@ -1,5 +1,5 @@
 #include "commands.hpp"
-#include "src/Logger.hpp"
+#include "logger.hpp"
 #include "src/modules.hpp"
 #include <algorithm>
 #include <cstdlib>
