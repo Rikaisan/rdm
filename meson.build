@@ -1,5 +1,5 @@
 project('rdm', 'cpp',
-  version : '1.3.3',
+  version : '1.4.0',
   default_options : ['warning_level=3','cpp_std=c++20'])
 
 # add_global_arguments('-D_NCOLOR', language: 'cpp')
