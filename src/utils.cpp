@@ -3,9 +3,14 @@
 #include <ctime>
 #include <filesystem>
 #include <fstream>
+#include <fnmatch.h>
 #include "Logger.hpp"
 #include "rdmlib.hpp"
-#include <fnmatch.h>
+
+const std::unordered_map<std::string, rdm::Flag> rdm::FLAG_MAP = {
+    { "--verbose", Flag::VERBOSE },
+    { "-v",        Flag::VERBOSE },
+};
 
 inline void rdm::ltrim(std::string &s) {
     s.erase(s.begin(), std::find_if(s.begin(), s.end(), [](unsigned char ch) {
@@ -179,11 +184,42 @@ void rdm::copyFileOrSym(fs::path source, fs::path dest) {
     }
 }
 
-bool rdm::isFlagPresent(Flag flag, std::unordered_set<std::string> flags) {
-    switch (flag) {
-        case Flag::VERBOSE:
-            return flags.contains("-v") || flags.contains("--verbose");
-        default:
-            return false;
+rdm::ModulesAndFlags rdm::parseModulesAndFlags(char* argv[], int count) {
+    ModulesAndFlags maf;
+    if (count == 0) return maf;
+
+    std::vector<std::string> args;
+    args.reserve(count);
+    for (int i = 0; i < count; ++i) {
+        args.emplace_back(argv[i]);
     }
+
+    int currentArg = 0;
+
+    while (currentArg < count) {
+        auto& arg = args.at(currentArg++);
+        if (arg.starts_with("-")) {
+            if (arg == "-f" || arg == "--flags") break;
+            if (!parseAndInsertFlag(maf, arg)) LOG_WARN("Found unknown flag '" << arg << "', ignoring it...");
+            continue;
+        }
+        maf.modules.insert(arg);
+    }
+
+    while (currentArg < count) {
+        auto& arg = args.at(currentArg++);
+        if (arg.starts_with("-")) {
+            if (!parseAndInsertFlag(maf, arg)) LOG_WARN("Found unknown flag '" << arg << "', ignoring it...");
+            continue;
+        }
+        maf.flags.insert(arg);
+    }
+
+    return maf;
+}
+
+bool rdm::parseAndInsertFlag(ModulesAndFlags& maf, std::string flag) {
+    if (!FLAG_MAP.contains(flag)) return false;
+    maf.programFlags.insert(FLAG_MAP.at(flag));
+    return true;
 }

@@ -2,6 +2,7 @@
 #include <filesystem>
 #include <string>
 #include <vector>
+#include <unordered_map>
 #include <unordered_set>
 
 namespace fs = std::filesystem;
@@ -10,6 +11,14 @@ namespace rdm {
     enum class Flag {
         VERBOSE
     };
+
+    struct ModulesAndFlags {
+        std::unordered_set<std::string> modules;
+        std::unordered_set<std::string> flags;
+        std::unordered_set<Flag> programFlags;
+    };
+
+    extern const std::unordered_map<std::string, Flag> FLAG_MAP;
 
     inline void ltrim(std::string &str);
     inline void rtrim(std::string &str);
@@ -30,5 +39,6 @@ namespace rdm {
     bool backupEntry(std::string group, fs::path entry);
     void copyFileOrSym(fs::path source, fs::path dest);
 
-    bool isFlagPresent(Flag flag, std::unordered_set<std::string> flags);
+    ModulesAndFlags parseModulesAndFlags(char* argv[], int count);
+    bool parseAndInsertFlag(ModulesAndFlags& maf, std::string flag);
 }

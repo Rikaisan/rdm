@@ -7,6 +7,7 @@
 #include <vector>
 #include <variant>
 #include <optional>
+#include "utils.hpp"
 
 namespace fs = std::filesystem;
 
@@ -40,12 +41,6 @@ namespace rdm {
 
     using FileContentMap = std::unordered_map<std::string, FileData>;
     using FileList = std::vector<fs::path>;
-
-    struct ModulesAndFlags {
-        std::unordered_set<std::string> modules;
-        std::unordered_set<std::string> flags;
-        std::unordered_set<std::string> program_flags;
-    };
 
     class Module;
     using ModuleList = std::unordered_map<std::string, Module>;

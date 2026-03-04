@@ -7,40 +7,6 @@
 
 using namespace rdm;
 
-ModulesAndFlags parseModulesAndFlags(char* argv[], int count) {
-    ModulesAndFlags maf;
-    if (count == 0) return maf;
-
-    std::vector<std::string> args;
-    args.reserve(count);
-    for (int i = 0; i < count; ++i) {
-        args.emplace_back(argv[i]);
-    }
-
-    int currentArg = 0;
-
-    while (currentArg < count) {
-        auto& arg = args.at(currentArg++);
-        if (arg.starts_with("-")) {
-            if (arg == "-f" || arg == "--flags") break;
-            maf.program_flags.insert(arg);
-            continue;
-        }
-        maf.modules.insert(arg);
-    }
-
-    while (currentArg < count) {
-        auto& arg = args.at(currentArg++);
-        if (arg.starts_with("-")) {
-            maf.program_flags.insert(arg);
-            continue;
-        }
-        maf.flags.insert(arg);
-    }
-
-    return maf;
-}
-
 int rdm::commands::apply(Command cmd, int argc, char **argv) {
     if (!fs::exists(RDM_DATA_DIR) || fs::is_empty(RDM_DATA_DIR)) {
         LOG_ERR("RDM data dir is empty or doesn't exist, run either 'rdm init' or 'rdm clone' to initialize it before running this command");
@@ -110,7 +76,7 @@ int rdm::commands::apply(Command cmd, int argc, char **argv) {
             } else if (generatedFiles.value().empty()) {
                 LOG_CUSTOM_DEBUG(moduleName, "The module '" << moduleName << "' was found but returned no files.");
                 continue;
-            } else if (isFlagPresent(Flag::VERBOSE, modulesAndFlags.program_flags)) {
+            } else if (modulesAndFlags.programFlags.contains(Flag::VERBOSE)) {
                 LOG_CUSTOM_INFO(moduleName, "Started processing");
             }
 
@@ -139,13 +105,13 @@ int rdm::commands::apply(Command cmd, int argc, char **argv) {
                         if (fs::exists(file)) {
                             if (cmd == Command::APPLY_SOFT) {
                                 skippedFiles++;
-                                if (isFlagPresent(Flag::VERBOSE, modulesAndFlags.program_flags))
+                                if (modulesAndFlags.programFlags.contains(Flag::VERBOSE))
                                     LOG_CUSTOM_INFO(moduleName, "Skipping " << file);
                                 continue;
                             }
 
                             if (cmd == Command::APPLY_SAFE) {
-                                if (isFlagPresent(Flag::VERBOSE, modulesAndFlags.program_flags))
+                                if (modulesAndFlags.programFlags.contains(Flag::VERBOSE))
                                     LOG_CUSTOM_INFO(moduleName, "Creating backup of " << file);
                                 backupEntry("home", file);
                                 savedFiles++;
@@ -157,12 +123,12 @@ int rdm::commands::apply(Command cmd, int argc, char **argv) {
                                 continue;
                             }
 
-                            if (isFlagPresent(Flag::VERBOSE, modulesAndFlags.program_flags))
+                            if (modulesAndFlags.programFlags.contains(Flag::VERBOSE))
                                 LOG_CUSTOM_WARN(moduleName, "Replacing " << file);
 
                             fs::remove(file);
                         } else {
-                            if (isFlagPresent(Flag::VERBOSE, modulesAndFlags.program_flags))
+                            if (modulesAndFlags.programFlags.contains(Flag::VERBOSE))
                                 LOG_CUSTOM_INFO(moduleName, "Creating " << file);
                         }
                     }
@@ -178,7 +144,7 @@ int rdm::commands::apply(Command cmd, int argc, char **argv) {
                             handle.close();
                             
                             if (fileData.isExecutable()) {
-                                if (isFlagPresent(Flag::VERBOSE, modulesAndFlags.program_flags))
+                                if (modulesAndFlags.programFlags.contains(Flag::VERBOSE))
                                     LOG_CUSTOM_INFO(moduleName, "Making " << file << " executable");
                                 std::filesystem::permissions(file, std::filesystem::perms::owner_exec | std::filesystem::perms::group_exec | std::filesystem::perms::others_exec, std::filesystem::perm_options::add);
                             }
@@ -198,7 +164,7 @@ int rdm::commands::apply(Command cmd, int argc, char **argv) {
                             copyFileOrSym(fileData.getPath(), file);
 
                             if (fileData.isExecutable()) {
-                                if (isFlagPresent(Flag::VERBOSE, modulesAndFlags.program_flags))
+                                if (modulesAndFlags.programFlags.contains(Flag::VERBOSE))
                                     LOG_CUSTOM_INFO(moduleName, "Making " << file << " executable");
                                 std::filesystem::permissions(file, std::filesystem::perms::owner_exec | std::filesystem::perms::group_exec | std::filesystem::perms::others_exec, std::filesystem::perm_options::add);
                             }
@@ -233,22 +199,22 @@ int rdm::commands::apply(Command cmd, int argc, char **argv) {
 
                                 if (fs::exists(fs::symlink_status(destinationFile))) {
                                     if (cmd == Command::APPLY_SOFT) {
-                                        if (isFlagPresent(Flag::VERBOSE, modulesAndFlags.program_flags))
+                                        if (modulesAndFlags.programFlags.contains(Flag::VERBOSE))
                                             LOG_CUSTOM_INFO(moduleName, "Skipping " << destinationFile);
                                         skippedFiles++;
                                         continue;
                                     }
                                     if (cmd == Command::APPLY_SAFE) {
-                                        if (isFlagPresent(Flag::VERBOSE, modulesAndFlags.program_flags))
+                                        if (modulesAndFlags.programFlags.contains(Flag::VERBOSE))
                                             LOG_CUSTOM_INFO(moduleName, "Creating backup of " << destinationFile);
                                         backupEntry("home", destinationFile);
                                         savedFiles++;
                                     }
-                                    if (isFlagPresent(Flag::VERBOSE, modulesAndFlags.program_flags))
+                                    if (modulesAndFlags.programFlags.contains(Flag::VERBOSE))
                                         LOG_CUSTOM_WARN(moduleName, "Replacing " << destinationFile);
                                     fs::remove(destinationFile);
                                 } else {
-                                    if (isFlagPresent(Flag::VERBOSE, modulesAndFlags.program_flags))
+                                    if (modulesAndFlags.programFlags.contains(Flag::VERBOSE))
                                         LOG_CUSTOM_INFO(moduleName, "Creating " << destinationFile);
                                 }
 
@@ -257,7 +223,7 @@ int rdm::commands::apply(Command cmd, int argc, char **argv) {
                                 if (shouldAlwaysExec ||
                                     (fileData.isExecutable() && fileMatchesPattern(destinationFile.filename(), fileData.getExecutablePattern()))
                                 ) {
-                                    if (isFlagPresent(Flag::VERBOSE, modulesAndFlags.program_flags))
+                                    if (modulesAndFlags.programFlags.contains(Flag::VERBOSE))
                                         LOG_CUSTOM_INFO(moduleName, "Making " << destinationFile << " executable");
                                     std::filesystem::permissions(destinationFile, std::filesystem::perms::owner_exec | std::filesystem::perms::group_exec | std::filesystem::perms::others_exec, std::filesystem::perm_options::add);
                                 }
@@ -275,7 +241,7 @@ int rdm::commands::apply(Command cmd, int argc, char **argv) {
             if (cmd != Command::PREVIEW) LOG_CUSTOM_INFO(moduleName, "Created or modified " << modifiedFiles << " files");
             if (cmd == Command::APPLY_SAFE) LOG_CUSTOM_INFO(moduleName, "Backed up " << savedFiles << " files that were already present");
             if (cmd != Command::PREVIEW && skippedFiles > 0) LOG_CUSTOM_INFO(moduleName, "Skipped " << skippedFiles << " files that were already present");
-            if (isFlagPresent(Flag::VERBOSE, modulesAndFlags.program_flags)) {
+            if (modulesAndFlags.programFlags.contains(Flag::VERBOSE)) {
                 if(cmd == Command::PREVIEW) LOG_SEP();
                 LOG_CUSTOM_INFO(moduleName, "Finished processing");
             }

@@ -1,7 +1,6 @@
 #include "modules.hpp"
 #include <string>
 #include "Logger.hpp"
-#include "utils.hpp"
 #include "api.hpp"
 
 namespace rdm {
