@@ -24,21 +24,21 @@ namespace rdm {
     inline void rtrim(std::string &str);
     void trim(std::string &str);
     
-    bool isAllowedPath(fs::path base, fs::path userPath, bool mustExist);
-    std::vector<fs::path> getDirectoryFilesRecursive(fs::path root);
-    bool fileMatchesPattern(std::string fileName, std::string pattern);
+    bool isAllowedPath(const fs::path &base, const fs::path &userPath, bool mustExist);
+    std::vector<fs::path> getDirectoryFilesRecursive(const fs::path &root);
+    bool fileMatchesPattern(const std::string &fileName, const std::string &pattern);
 
     fs::path getDataDir();
     fs::path getBackupDir();
-    fs::path getBackupDir(std::string group);
+    fs::path getBackupDir(const std::string &group);
     fs::path getUserHome();
     void ensureDataDirExists(bool populate);
     bool copyRDMLib();
     void setupBackupDir();
-    void setupBackupDir(std::string group);
-    bool backupEntry(std::string group, fs::path entry);
-    void copyFileOrSym(fs::path source, fs::path dest);
+    void setupBackupDir(const std::string &group);
+    bool backupEntry(const std::string &group, const fs::path &entry);
+    void copyFileOrSym(const fs::path &source, const fs::path &dest);
 
     ModulesAndFlags parseModulesAndFlags(char* argv[], int count);
-    bool parseAndInsertFlag(ModulesAndFlags& maf, std::string flag);
+    bool parseAndInsertFlag(ModulesAndFlags& maf, const std::string &flag);
 }

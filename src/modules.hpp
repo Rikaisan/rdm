@@ -20,8 +20,8 @@ namespace rdm {
     };
 
     struct FileData {
-        FileData(std::string content);
-        FileData(fs::path path, FileDataType dataType);
+        FileData(const std::string &content);
+        FileData(const fs::path &path, FileDataType dataType);
         FileData(FileData&& other);
         FileData(FileData& other) = delete;
         std::string getContent() const;
@@ -30,7 +30,7 @@ namespace rdm {
         bool isExecutable() const;
         std::string getExecutablePattern() const;
         void setExecutable(bool executable);
-        void setExecutableRules(std::string pattern);
+        void setExecutableRules(const std::string &pattern);
 
         private:
         std::variant<std::string, fs::path> m_content, m_filePath;
@@ -48,7 +48,7 @@ namespace rdm {
     
     class Module {
         public:
-        Module(fs::path path, fs::path destinationRoot);
+        Module(const fs::path &path, const fs::path &destinationRoot);
         Module(Module&& other);
         Module(Module& other) = delete;
         Module& operator=(const Module&) = delete;
@@ -62,13 +62,13 @@ namespace rdm {
         std::string getName() const;
         ~Module();
 
-        static std::string getNameFromPath(std::filesystem::path path);
+        static std::string getNameFromPath(const fs::path &path);
         static fs::path getCurrentlyExecutingFile();
 
         
         private:
         int setupLuaState();
-        bool callLuaMethod(std::string name);
+        bool callLuaMethod(const std::string &name);
         
         static fs::path s_currentlyExecutingFile;
         
@@ -85,8 +85,8 @@ namespace rdm {
 
     class ModuleManager {
         public:
-        ModuleManager(fs::path root, fs::path destinationRoot);
-        ModuleManager(fs::path root, fs::path destinationRoot, ModulesAndFlags& maf);
+        ModuleManager(const fs::path &root, const fs::path &destinationRoot);
+        ModuleManager(const fs::path &root, const fs::path &destinationRoot, const ModulesAndFlags &maf);
         void refreshModules();
         ModuleList& getModules();
         ModulePaths& getAvailableModules();
@@ -96,14 +96,14 @@ namespace rdm {
         void runDelayeds();
 
         static bool shouldProcessAllModules();
-        static bool shouldProcessModule(std::string module);
-        static ModuleList getModules(fs::path root, fs::path destinationRoot);
-        static ModulePaths getAvailableModules(fs::path root);
-        static bool isFlagSet(std::string flag);
+        static bool shouldProcessModule(const std::string &module);
+        static ModuleList getModules(const fs::path &root, const fs::path &destinationRoot);
+        static ModulePaths getAvailableModules(const fs::path &root);
+        static bool isFlagSet(const std::string &flag);
 
         static const std::string MODULE_PREFIX;
         private:
-        static bool updateModuleList(fs::path root, fs::path destinationRoot, ModuleList& moduleList);
+        static bool updateModuleList(const fs::path &root, const fs::path &destinationRoot, ModuleList &moduleList);
         const fs::path m_root;
         const fs::path m_destinationRoot;
         ModuleList m_modules;

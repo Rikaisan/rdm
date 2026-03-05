@@ -61,7 +61,7 @@ namespace rdm::commands {
         return handler(cmd, argc, argv);
     }
 
-    Command parseCommand(std::string raw_cmd) {
+    Command parseCommand(const std::string &raw_cmd) {
         Command cmd = Command::UNKNOWN;
         if (COMMAND_MAP.contains(raw_cmd)) cmd = COMMAND_MAP.at(raw_cmd);
         return cmd;

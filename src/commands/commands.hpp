@@ -32,7 +32,7 @@ namespace rdm::commands {
     int init(Command cmd, int argc, char* argv[]);
     int unknown(Command cmd, int argc, char* argv[]);
     int runCommandHandler(Command cmd, int argc, char* argv[]);
-    Command parseCommand(std::string cmd);
+    Command parseCommand(const std::string &cmd);
 
     // External
     int apply(Command cmd, int argc, char* argv[]);

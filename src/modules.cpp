@@ -13,12 +13,12 @@ namespace rdm {
     std::unordered_set<std::string> ModuleManager::s_userFlags;
     fs::path Module::s_currentlyExecutingFile;
 
-    FileData::FileData(std::string content) {
+    FileData::FileData(const std::string &content) {
         m_dataType = FileDataType::Text;
         m_content = content;
     }
 
-    FileData::FileData(fs::path path, FileDataType dataType) : m_dataType(dataType) {
+    FileData::FileData(const fs::path &path, FileDataType dataType) : m_dataType(dataType) {
         if (dataType == FileDataType::Text) {
             m_content = std::string(path);
         } else {
@@ -59,7 +59,7 @@ namespace rdm {
     void FileData::setExecutable(bool executable) {
         m_isExecutable = executable;
     }
-    void FileData::setExecutableRules(std::string pattern) {
+    void FileData::setExecutableRules(const std::string &pattern) {
         m_execPattern = pattern;
     }
 
@@ -67,7 +67,7 @@ namespace rdm {
         return m_execPattern;
     }
 
-    Module::Module(fs::path modulePath, fs::path destinationRoot)
+    Module::Module(const fs::path &modulePath, const fs::path &destinationRoot)
     : m_modulePath(modulePath)
     , m_destinationRoot(destinationRoot)
     , m_name(Module::getNameFromPath(modulePath)) {
@@ -234,7 +234,7 @@ namespace rdm {
         return m_luaExitCode;
     }
 
-    std::string Module::getNameFromPath(std::filesystem::path path) {
+    std::string Module::getNameFromPath(const fs::path &path) {
         return path.stem().string().substr(ModuleManager::MODULE_PREFIX.length());
     }
 
@@ -292,7 +292,7 @@ namespace rdm {
         return callLuaMethod("RDM_Delayed");
     }
 
-    bool Module::callLuaMethod(std::string name) {
+    bool Module::callLuaMethod(const std::string &name) {
         if (m_luaExitCode != LUA_OK) return false;
         if (lua_getglobal(m_state, name.c_str()) == LUA_TFUNCTION) {
             m_luaExitCode = lua_pcall(m_state, 0, 0, 0);
@@ -308,14 +308,14 @@ namespace rdm {
     }
 
 
-    ModuleManager::ModuleManager(fs::path root, fs::path destinationRoot)
+    ModuleManager::ModuleManager(const fs::path &root, const fs::path &destinationRoot)
     : m_root(root)
     , m_destinationRoot(destinationRoot)
     {
         this->refreshModules();
     }
 
-    ModuleManager::ModuleManager(fs::path root, fs::path destinationRoot, ModulesAndFlags& maf)
+    ModuleManager::ModuleManager(const fs::path &root, const fs::path &destinationRoot, const ModulesAndFlags &maf)
     : m_root(root)
     , m_destinationRoot(destinationRoot)
     {
@@ -348,7 +348,7 @@ namespace rdm {
         return s_availableModules;
     }
 
-    ModulePaths ModuleManager::getAvailableModules(fs::path root) {
+    ModulePaths ModuleManager::getAvailableModules(const fs::path &root) {
         ModulePaths modules;
         modules.reserve(32);
 
@@ -369,7 +369,7 @@ namespace rdm {
         return modules;
     }
 
-    ModuleList ModuleManager::getModules(fs::path root, fs::path destinationRoot) {
+    ModuleList ModuleManager::getModules(const fs::path &root, const fs::path &destinationRoot) {
         ModuleList modules;
         modules.reserve(s_queuedModules.size());
 
@@ -378,7 +378,7 @@ namespace rdm {
         return modules;
     }
 
-    bool ModuleManager::updateModuleList(fs::path root, fs::path destinationRoot, ModuleList& moduleList) {
+    bool ModuleManager::updateModuleList(const fs::path &root, const fs::path &destinationRoot, ModuleList &moduleList) {
         std::unordered_set<std::string> newQueueItems;
         for (auto& moduleName : s_queuedModules) {
             if (s_availableModules.contains(moduleName) && !moduleList.contains(moduleName)) {
@@ -437,7 +437,7 @@ namespace rdm {
         }
     }
 
-    bool ModuleManager::isFlagSet(std::string flag) {
+    bool ModuleManager::isFlagSet(const std::string &flag) {
         return s_userFlags.contains(flag);
     }
 
@@ -445,7 +445,7 @@ namespace rdm {
         return s_userModules.empty() && s_queuedModules.empty();
     }
 
-    bool ModuleManager::shouldProcessModule(std::string module) {
+    bool ModuleManager::shouldProcessModule(const std::string &module) {
         return shouldProcessAllModules() || s_userModules.contains(module);
     }
 }

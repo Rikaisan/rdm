@@ -52,11 +52,11 @@ fs::path rdm::getBackupDir() {
     return getDataDir() / "backup";
 }
 
-fs::path rdm::getBackupDir(std::string group) {
+fs::path rdm::getBackupDir(const std::string &group) {
     return getBackupDir() / group;
 }
 
-bool rdm::isAllowedPath(fs::path base, fs::path userPath, bool mustExist) {
+bool rdm::isAllowedPath(const fs::path &base, const fs::path &userPath, bool mustExist) {
     // LOG_DEBUG("Validating path: " << userPath);
     fs::path absoluteBase = fs::weakly_canonical(base);
     fs::path absoluteUser = fs::weakly_canonical(userPath);
@@ -84,7 +84,7 @@ bool rdm::isAllowedPath(fs::path base, fs::path userPath, bool mustExist) {
     return isValid;
 }
 
-std::vector<fs::path> rdm::getDirectoryFilesRecursive(fs::path root) {
+std::vector<fs::path> rdm::getDirectoryFilesRecursive(const fs::path &root) {
     std::vector<fs::path> files;
     files.reserve(8);
     for (auto& entry : fs::directory_iterator(root)) {
@@ -100,7 +100,7 @@ std::vector<fs::path> rdm::getDirectoryFilesRecursive(fs::path root) {
     return files;
 }
 
-bool rdm::fileMatchesPattern(std::string fileName, std::string pattern) {
+bool rdm::fileMatchesPattern(const std::string &fileName, const std::string &pattern) {
     return fnmatch(pattern.c_str(), fileName.c_str(), FNM_EXTMATCH) != FNM_NOMATCH;
 }
 
@@ -156,7 +156,7 @@ void rdm::setupBackupDir() {
     }
 }
 
-void rdm::setupBackupDir(std::string group) {
+void rdm::setupBackupDir(const std::string &group) {
     fs::path backupsDataDir = getBackupDir(group);
 
     if (fs::exists(backupsDataDir) && !fs::is_empty(backupsDataDir)) {
@@ -168,14 +168,14 @@ void rdm::setupBackupDir(std::string group) {
     }
 }
 
-bool rdm::backupEntry(std::string group, fs::path entry) {
+bool rdm::backupEntry(const std::string &group, const fs::path &entry) {
     fs::path backup_entry = getBackupDir(group) / entry.lexically_relative(getUserHome());
     if (fs::exists(backup_entry)) return false;
     copyFileOrSym(entry, backup_entry);
     return true;
 }
 
-void rdm::copyFileOrSym(fs::path source, fs::path dest) {
+void rdm::copyFileOrSym(const fs::path &source, const fs::path &dest) {
     fs::create_directories(dest.parent_path());
     if (fs::is_symlink(source)) {
         fs::copy_symlink(source, dest);
@@ -218,7 +218,7 @@ rdm::ModulesAndFlags rdm::parseModulesAndFlags(char* argv[], int count) {
     return maf;
 }
 
-bool rdm::parseAndInsertFlag(ModulesAndFlags& maf, std::string flag) {
+bool rdm::parseAndInsertFlag(ModulesAndFlags& maf, const std::string &flag) {
     if (!FLAG_MAP.contains(flag)) return false;
     maf.programFlags.insert(FLAG_MAP.at(flag));
     return true;
