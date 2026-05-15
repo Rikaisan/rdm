@@ -10,7 +10,7 @@ depends=("glibc" "gcc-libs" "lua")
 optdepends=("libgit2: repository cloning support")
 makedepends=("meson" "libgit2")
 source=("$pkgname-$pkgver.tar.gz::https://github.com/Rikaisan/rdm/archive/refs/tags/v${pkgver}.tar.gz")
-sha256sums=('4cf3518cd3f57a87978aa54369e61c834d2b7b563df5c682fb04bbe77dcf6637')
+sha256sums=('e8b8ea2b9ee41831c4284f795dc563d3a15ead66e6443cebcc99ae1c715e5191')
 
 prepare() {
 	cd "$pkgname-$pkgver"
