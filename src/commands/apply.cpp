@@ -54,8 +54,10 @@ int rdm::commands::apply(Command cmd, int argc, char **argv) {
         }
     }
 
-    LOG_CUSTOM("Safety", "Cleaning backup directory...");
-    if (cmd == Command::APPLY_SAFE) setupBackupDir("home");
+    if (cmd == Command::APPLY_SAFE) {
+        LOG_CUSTOM("Safety", "Cleaning backup directory...");
+        setupBackupDir("home");
+    }
 
     LOG_SEP();
     LOG_CUSTOM("Stage", "Running init operations...");
