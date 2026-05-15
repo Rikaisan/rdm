@@ -1,4 +1,6 @@
 # Maintainer: Rikai <rikaisensei@gmail.com>
+# Checksums are skipped on the repository build scripts,
+# but please replace them if you decide to use these scripts to help distribute RDM
 pkgname=rdm
 pkgver=1.4.1
 pkgrel=1
@@ -10,7 +12,7 @@ depends=("glibc" "gcc-libs" "lua")
 optdepends=("libgit2: repository cloning support")
 makedepends=("meson" "libgit2")
 source=("$pkgname-$pkgver.tar.gz::https://github.com/Rikaisan/rdm/archive/refs/tags/v${pkgver}.tar.gz")
-sha256sums=('e8b8ea2b9ee41831c4284f795dc563d3a15ead66e6443cebcc99ae1c715e5191')
+sha256sums=('SKIP')
 
 prepare() {
 	cd "$pkgname-$pkgver"
